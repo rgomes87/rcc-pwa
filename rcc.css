@@ -2706,6 +2706,25 @@
     letter-spacing: 0.06em;
     flex: 1;
   }
+  /* CodeMirror 6 section editor */
+  .wl-cm-wrap { flex: 1; min-height: 80px; overflow: hidden; }
+  .wl-cm-wrap .cm-editor { border: none; height: 100%; }
+  .wl-cm-wrap .cm-scroller { overflow: auto; }
+  .wl-section-editor.collapsed .wl-cm-wrap { display: none; }
+  .wl-cm-preview {
+    padding: 8px 14px 14px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    overflow-y: auto;
+  }
+  /* Active state for toggle toolbar buttons */
+  .wl-fmt-btn.wl-fmt-btn-active {
+    background: rgba(var(--accent-rgb), 0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  /* Keep old .wl-editor rule in case any legacy HTML still exists */
   .wl-editor {
     font-family: var(--font-mono);
     font-size: 12px;

@@ -589,6 +589,15 @@
   </div>
 
   <div id="modalBackdrop"></div>
+  <script type="module">
+    import { EditorView, EditorState, lineNumbers } from 'https://esm.sh/@codemirror/view@6';
+    import { basicSetup }    from 'https://esm.sh/codemirror@6';
+    import { markdown }      from 'https://esm.sh/@codemirror/lang-markdown@6';
+    import { vim }           from 'https://esm.sh/@replit/codemirror-vim@6';
+    import { closeBrackets } from 'https://esm.sh/@codemirror/autocomplete@6';
+    window.CM6 = { EditorView, EditorState, basicSetup, markdown, vim, closeBrackets, lineNumbers };
+    window.dispatchEvent(new CustomEvent('cm6loaded'));
+  </script>
   <script src="rcc.js?v=3"></script>
   <script>
     if ('serviceWorker' in navigator) {
