@@ -5739,34 +5739,12 @@ function createReminderModal(remId) {
       els.push(notesEl);
     }
 
-    // Footer: actions left, edit right
+    // Footer: Delete + Edit on left, Mark Done on right
     const footer = document.createElement('div');
     footer.className = 'rem-edit-footer rem-view-footer';
 
     const leftBtns = document.createElement('div');
-    leftBtns.style.cssText = 'display:flex;gap:8px;margin-right:auto;';
-
-    if (!rem.done) {
-      const doneBtn = document.createElement('button');
-      doneBtn.className = 'rem-view-action-btn rem-view-done-btn';
-      doneBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Mark done`;
-      doneBtn.addEventListener('click', () => {
-        const r = reminders.find(r => r.id === rem.id);
-        if (r) { r.done = true; r.doneAt = localDateStr(); saveReminders(reminders); renderReminders(); }
-        renderView();
-      });
-      leftBtns.appendChild(doneBtn);
-    } else {
-      const undoBtn = document.createElement('button');
-      undoBtn.className = 'rem-view-action-btn';
-      undoBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg> Undo`;
-      undoBtn.addEventListener('click', () => {
-        const r = reminders.find(r => r.id === rem.id);
-        if (r) { r.done = false; delete r.doneAt; saveReminders(reminders); renderReminders(); }
-        renderView();
-      });
-      leftBtns.appendChild(undoBtn);
-    }
+    leftBtns.style.cssText = 'display:flex;gap:8px;';
 
     const delBtn = document.createElement('button');
     delBtn.className = 'rem-view-action-btn rem-view-del-btn';
@@ -5775,14 +5753,38 @@ function createReminderModal(remId) {
       reminders = reminders.filter(r => r.id !== rem.id);
       saveReminders(reminders); renderReminders(); close();
     });
-    leftBtns.appendChild(delBtn);
 
     const editBtn = document.createElement('button');
     editBtn.className = 'add-rec-btn';
     editBtn.textContent = 'Edit';
     editBtn.addEventListener('click', renderEdit);
 
-    footer.append(leftBtns, editBtn);
+    leftBtns.append(delBtn, editBtn);
+
+    let markDoneBtn;
+    if (!rem.done) {
+      markDoneBtn = document.createElement('button');
+      markDoneBtn.className = 'rem-view-action-btn rem-view-done-btn';
+      markDoneBtn.style.marginLeft = 'auto';
+      markDoneBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Mark done`;
+      markDoneBtn.addEventListener('click', () => {
+        const r = reminders.find(r => r.id === rem.id);
+        if (r) { r.done = true; r.doneAt = localDateStr(); saveReminders(reminders); renderReminders(); }
+        renderView();
+      });
+    } else {
+      markDoneBtn = document.createElement('button');
+      markDoneBtn.className = 'rem-view-action-btn';
+      markDoneBtn.style.marginLeft = 'auto';
+      markDoneBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg> Undo`;
+      markDoneBtn.addEventListener('click', () => {
+        const r = reminders.find(r => r.id === rem.id);
+        if (r) { r.done = false; delete r.doneAt; saveReminders(reminders); renderReminders(); }
+        renderView();
+      });
+    }
+
+    footer.append(leftBtns, markDoneBtn);
     els.push(footer);
     body.append(...els);
   }
