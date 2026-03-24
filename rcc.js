@@ -2593,15 +2593,31 @@ function createClinicalEntryModal(editId, areaId) {
   const { bar: topBar, addSectionBtn: addSectionBtnTop, copyMdBtn: copyMdBtnTop, dlMdBtn: dlMdBtnTop, saveBtn: saveBtnTop } = buildWLActionBar(true);
   const formatBar = buildWLFormatBar();
   const sectionsEl = buildWLSectionsContainer(entry, null);
-  const { bar: footer, addSectionBtn, copyMdBtn, dlMdBtn, saveBtn } = buildWLActionBar(false);
+  const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
+  const editFooter = editId ? buildWLEditFooter({
+    onDelete: async () => {
+      clinicalEntries = clinicalEntries.filter(e => e.id !== editId);
+      await saveClinicalEntries(clinicalEntries);
+      modal._onClose = renderClinicalHub;
+      closeModal();
+    },
+    onArchive: async () => {
+      const e = clinicalEntries.find(e => e.id === editId);
+      if (e) { e.archived = true; e.archivedAt = new Date().toISOString(); }
+      await saveClinicalEntries(clinicalEntries);
+      modal._onClose = renderClinicalHub;
+      closeModal();
+    },
+  }) : null;
 
   modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
+  if (editFooter) modal.appendChild(editFooter);
   document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
 
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
-  
+
   closeBtn.addEventListener('click', closeModal);
 
   async function saveModal() {
@@ -2617,19 +2633,11 @@ function createClinicalEntryModal(editId, areaId) {
         existing.updatedAt = now;
       }
     } else {
-      clinicalEntries.unshift({
-        id: crypto.randomUUID(),
-        areaId: effectiveAreaId,
-        title,
-        tags: entryTags.slice(),
-        sections: collectWLSections(sectionsEl),
-        createdAt: now,
-        updatedAt: now
-      });
+      clinicalEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), createdAt: now, updatedAt: now });
     }
     await saveClinicalEntries(clinicalEntries);
-    renderClinicalHub();
     showToast('Entry saved.');
+    modal._onClose = renderClinicalHub;
     closeModal();
   }
 
@@ -2683,29 +2691,21 @@ function openClinicalEntryViewModal(entryId) {
   closeBtn.innerHTML = '&#x2715;';
   header.append(headerLeft, closeBtn);
 
-  // Sections (rendered markdown)
+  // Sections (rendered markdown, collapsible)
   const sectionsEl = document.createElement('div');
   sectionsEl.className = 'wl-view-sections';
   (entry.sections || []).forEach((s, sIdx) => {
     const hasContent = (s.nodes || []).some(n => (n.value || '').trim() || n.type === 'image') || (s.content || '').trim();
     if (!hasContent) return;
-    const secDiv = document.createElement('div');
-    secDiv.className = 'wl-view-section';
-    const secTitle = document.createElement('div');
-    secTitle.className = 'wl-view-section-title';
-    secTitle.textContent = s.title;
-    const secBody = document.createElement('div');
-    secBody.className = 'wl-view-section-body';
-    _renderWLSectionNodes(secBody, s.nodes || [], entryId, sIdx);
-    secDiv.append(secTitle, secBody);
-    sectionsEl.appendChild(secDiv);
+    sectionsEl.appendChild(_buildViewSection(s, entryId, sIdx));
   });
 
-  // Footer
+  // Footer — Edit button right-aligned
   const footer = document.createElement('div');
   footer.className = 'wl-modal-footer';
   const editBtn = document.createElement('button');
   editBtn.className = 'tool-btn primary';
+  editBtn.style.marginLeft = 'auto';
   editBtn.innerHTML = '&#9998; Edit';
   footer.appendChild(editBtn);
 
@@ -2714,7 +2714,7 @@ function openClinicalEntryViewModal(entryId) {
 
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
-  
+
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
   editBtn.addEventListener('click', () => { closeModal(); createClinicalEntryModal(entryId); });
@@ -3067,15 +3067,31 @@ function createCogitoEntryModal(editId, areaId) {
   const { bar: topBar, addSectionBtn: addSectionBtnTop, copyMdBtn: copyMdBtnTop, dlMdBtn: dlMdBtnTop, saveBtn: saveBtnTop } = buildWLActionBar(true);
   const formatBar = buildWLFormatBar();
   const sectionsEl = buildWLSectionsContainer(entry, null);
-  const { bar: footer, addSectionBtn, copyMdBtn, dlMdBtn, saveBtn } = buildWLActionBar(false);
+  const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
+  const editFooter = editId ? buildWLEditFooter({
+    onDelete: async () => {
+      cogitoEntries = cogitoEntries.filter(e => e.id !== editId);
+      await saveCogitoEntries(cogitoEntries);
+      modal._onClose = renderCogitoHub;
+      closeModal();
+    },
+    onArchive: async () => {
+      const e = cogitoEntries.find(e => e.id === editId);
+      if (e) { e.archived = true; e.archivedAt = new Date().toISOString(); }
+      await saveCogitoEntries(cogitoEntries);
+      modal._onClose = renderCogitoHub;
+      closeModal();
+    },
+  }) : null;
 
   modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
+  if (editFooter) modal.appendChild(editFooter);
   document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
 
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
-  
+
   closeBtn.addEventListener('click', closeModal);
 
   async function saveModal() {
@@ -3084,26 +3100,13 @@ function createCogitoEntryModal(editId, areaId) {
     const now = new Date().toISOString();
     if (editId) {
       const existing = cogitoEntries.find(e => e.id === editId);
-      if (existing) {
-        existing.title = title;
-        existing.tags = entryTags.slice();
-        existing.sections = collectWLSections(sectionsEl);
-        existing.updatedAt = now;
-      }
+      if (existing) { existing.title = title; existing.tags = entryTags.slice(); existing.sections = collectWLSections(sectionsEl); existing.updatedAt = now; }
     } else {
-      cogitoEntries.unshift({
-        id: crypto.randomUUID(),
-        areaId: effectiveAreaId,
-        title,
-        tags: entryTags.slice(),
-        sections: collectWLSections(sectionsEl),
-        createdAt: now,
-        updatedAt: now
-      });
+      cogitoEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), createdAt: now, updatedAt: now });
     }
     await saveCogitoEntries(cogitoEntries);
-    renderCogitoHub();
     showToast('Entry saved.');
+    modal._onClose = renderCogitoHub;
     closeModal();
   }
 
@@ -3157,29 +3160,21 @@ function openCogitoEntryViewModal(entryId) {
   closeBtn.innerHTML = '&#x2715;';
   header.append(headerLeft, closeBtn);
 
-  // Sections (rendered markdown)
+  // Sections (rendered markdown, collapsible)
   const sectionsEl = document.createElement('div');
   sectionsEl.className = 'wl-view-sections';
   (entry.sections || []).forEach((s, sIdx) => {
     const hasContent = (s.nodes || []).some(n => (n.value || '').trim() || n.type === 'image') || (s.content || '').trim();
     if (!hasContent) return;
-    const secDiv = document.createElement('div');
-    secDiv.className = 'wl-view-section';
-    const secTitle = document.createElement('div');
-    secTitle.className = 'wl-view-section-title';
-    secTitle.textContent = s.title;
-    const secBody = document.createElement('div');
-    secBody.className = 'wl-view-section-body';
-    _renderWLSectionNodes(secBody, s.nodes || [], entryId, sIdx);
-    secDiv.append(secTitle, secBody);
-    sectionsEl.appendChild(secDiv);
+    sectionsEl.appendChild(_buildViewSection(s, entryId, sIdx));
   });
 
-  // Footer
+  // Footer — Edit right-aligned
   const footer = document.createElement('div');
   footer.className = 'wl-modal-footer';
   const editBtn = document.createElement('button');
   editBtn.className = 'tool-btn primary';
+  editBtn.style.marginLeft = 'auto';
   editBtn.innerHTML = '&#9998; Edit';
   footer.appendChild(editBtn);
 
@@ -3188,7 +3183,7 @@ function openCogitoEntryViewModal(entryId) {
 
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
-  
+
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
   editBtn.addEventListener('click', () => { closeModal(); createCogitoEntryModal(entryId); });
@@ -3480,12 +3475,27 @@ function createReqprocEntryModal(editId, areaId) {
   const formatBar = buildWLFormatBar();
   const sectionsEl = buildWLSectionsContainer(entry, null);
   const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
+  const editFooter = editId ? buildWLEditFooter({
+    onDelete: async () => {
+      reqprocEntries = reqprocEntries.filter(e => e.id !== editId);
+      await saveReqprocEntries(reqprocEntries);
+      modal._onClose = renderReqprocHub;
+      closeModal();
+    },
+    onArchive: async () => {
+      const e = reqprocEntries.find(e => e.id === editId);
+      if (e) { e.archived = true; e.archivedAt = new Date().toISOString(); }
+      await saveReqprocEntries(reqprocEntries);
+      modal._onClose = renderReqprocHub;
+      closeModal();
+    },
+  }) : null;
   modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
+  if (editFooter) modal.appendChild(editFooter);
   document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
-  
   closeBtn.addEventListener('click', closeModal);
   async function saveModal() {
     const title = titleIn.value.trim();
@@ -3498,8 +3508,8 @@ function createReqprocEntryModal(editId, areaId) {
       reqprocEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), createdAt: now, updatedAt: now });
     }
     await saveReqprocEntries(reqprocEntries);
-    renderReqprocHub();
     showToast('Entry saved.');
+    modal._onClose = renderReqprocHub;
     closeModal();
   }
   [saveBtn, saveBtnTop].forEach(b => b.addEventListener('click', saveModal));
@@ -3535,20 +3545,16 @@ function openReqprocEntryViewModal(entryId) {
   (entry.sections || []).forEach((s, sIdx) => {
     const hasContent = (s.nodes || []).some(n => (n.value || '').trim() || n.type === 'image') || (s.content || '').trim();
     if (!hasContent) return;
-    const secDiv = document.createElement('div'); secDiv.className = 'wl-view-section';
-    const secTitle = document.createElement('div'); secTitle.className = 'wl-view-section-title'; secTitle.textContent = s.title;
-    const secBody = document.createElement('div'); secBody.className = 'wl-view-section-body';
-    _renderWLSectionNodes(secBody, s.nodes || [], entryId, sIdx);
-    secDiv.append(secTitle, secBody); sectionsEl.appendChild(secDiv);
+    sectionsEl.appendChild(_buildViewSection(s, entryId, sIdx));
   });
   const footer = document.createElement('div'); footer.className = 'wl-modal-footer';
-  const editBtn = document.createElement('button'); editBtn.className = 'tool-btn primary'; editBtn.innerHTML = '&#9998; Edit';
+  const editBtn = document.createElement('button'); editBtn.className = 'tool-btn primary';
+  editBtn.style.marginLeft = 'auto'; editBtn.innerHTML = '&#9998; Edit';
   footer.appendChild(editBtn);
   modal.append(dragBar, header, sectionsEl, footer);
   document.body.appendChild(modal); modal._openModal?.();
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
-  
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
   editBtn.addEventListener('click', () => { closeModal(); createReqprocEntryModal(entryId); });
@@ -3803,12 +3809,27 @@ function createTrustanalyticsEntryModal(editId, areaId) {
   const formatBar = buildWLFormatBar();
   const sectionsEl = buildWLSectionsContainer(entry, null);
   const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
+  const editFooter = editId ? buildWLEditFooter({
+    onDelete: async () => {
+      trustanalyticsEntries = trustanalyticsEntries.filter(e => e.id !== editId);
+      await saveTrustanalyticsEntries(trustanalyticsEntries);
+      modal._onClose = renderTrustanalyticsHub;
+      closeModal();
+    },
+    onArchive: async () => {
+      const e = trustanalyticsEntries.find(e => e.id === editId);
+      if (e) { e.archived = true; e.archivedAt = new Date().toISOString(); }
+      await saveTrustanalyticsEntries(trustanalyticsEntries);
+      modal._onClose = renderTrustanalyticsHub;
+      closeModal();
+    },
+  }) : null;
   modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
+  if (editFooter) modal.appendChild(editFooter);
   document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
-  
   closeBtn.addEventListener('click', closeModal);
   async function saveModal() {
     const title = titleIn.value.trim();
@@ -3821,8 +3842,8 @@ function createTrustanalyticsEntryModal(editId, areaId) {
       trustanalyticsEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), createdAt: now, updatedAt: now });
     }
     await saveTrustanalyticsEntries(trustanalyticsEntries);
-    renderTrustanalyticsHub();
     showToast('Entry saved.');
+    modal._onClose = renderTrustanalyticsHub;
     closeModal();
   }
   [saveBtn, saveBtnTop].forEach(b => b.addEventListener('click', saveModal));
@@ -3852,19 +3873,15 @@ function openTrustanalyticsEntryViewModal(entryId) {
   (entry.sections || []).forEach((s, sIdx) => {
     const hasContent = (s.nodes || []).some(n => (n.value || '').trim() || n.type === 'image') || (s.content || '').trim();
     if (!hasContent) return;
-    const secDiv = document.createElement('div'); secDiv.className = 'wl-view-section';
-    const secTitle = document.createElement('div'); secTitle.className = 'wl-view-section-title'; secTitle.textContent = s.title;
-    const secBody = document.createElement('div'); secBody.className = 'wl-view-section-body';
-    _renderWLSectionNodes(secBody, s.nodes || [], entryId, sIdx);
-    secDiv.append(secTitle, secBody); sectionsEl.appendChild(secDiv);
+    sectionsEl.appendChild(_buildViewSection(s, entryId, sIdx));
   });
   const footer = document.createElement('div'); footer.className = 'wl-modal-footer';
-  const editBtn = document.createElement('button'); editBtn.className = 'tool-btn primary'; editBtn.innerHTML = '&#9998; Edit'; footer.appendChild(editBtn);
+  const editBtn = document.createElement('button'); editBtn.className = 'tool-btn primary';
+  editBtn.style.marginLeft = 'auto'; editBtn.innerHTML = '&#9998; Edit'; footer.appendChild(editBtn);
   modal.append(dragBar, header, sectionsEl, footer);
   document.body.appendChild(modal); modal._openModal?.();
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
-  
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
   editBtn.addEventListener('click', () => { closeModal(); createTrustanalyticsEntryModal(entryId); });
@@ -4332,6 +4349,26 @@ function _renderWLSectionNodes(el, nodes, itemId, sectionIdx) {
       el.appendChild(wrapper);
     }
   });
+}
+
+// ── Shared helper: build a collapsible view section ──────────────
+function _buildViewSection(s, entryId, sIdx) {
+  const secDiv = document.createElement('div');
+  secDiv.className = 'wl-view-section';
+  const secTitle = document.createElement('div');
+  secTitle.className = 'wl-view-section-title';
+  const chevron = document.createElement('button');
+  chevron.className = 'wl-view-section-chevron';
+  chevron.innerHTML = '&#9660;';
+  chevron.setAttribute('aria-label', 'Toggle section');
+  secTitle.append(chevron, document.createTextNode(' ' + s.title));
+  secTitle.style.cursor = 'pointer';
+  secTitle.addEventListener('click', () => secDiv.classList.toggle('collapsed'));
+  const secBody = document.createElement('div');
+  secBody.className = 'wl-view-section-body';
+  _renderWLSectionNodes(secBody, s.nodes || [], entryId, sIdx);
+  secDiv.append(secTitle, secBody);
+  return secDiv;
 }
 
 // ── B1: Kanban board ──────────────────────────────────────────────────────────
@@ -5199,7 +5236,7 @@ function buildWLModalTicketRow(item) {
   return { ticketRow, ticketIn };
 }
 
-function buildWLLinksSection() {
+function buildWLLinksSection(existingLinks) {
   const linksSection = document.createElement('div');
   linksSection.className = 'wl-links-section';
   const linksLabel = document.createElement('div');
@@ -5207,18 +5244,76 @@ function buildWLLinksSection() {
   linksLabel.textContent = 'Linked items';
   const linkedListEl = document.createElement('div');
   linkedListEl.className = 'wl-links-list';
+
+  // Stored links: [{ type, id, title }]
+  const links = (existingLinks || []).map(l => ({ ...l }));
+
+  function renderLinks() {
+    linkedListEl.innerHTML = '';
+    links.forEach((lnk, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'snip-tag-chip';
+      chip.innerHTML = `<span style="font-size:9px;color:var(--text-faint);margin-right:3px">[${lnk.type}]</span>${escHtml(lnk.title)}<button class="icon-btn del" style="font-size:9px;padding:0 2px" title="Remove">&#x2715;</button>`;
+      chip.querySelector('button').addEventListener('click', () => { links.splice(i, 1); renderLinks(); });
+      linkedListEl.appendChild(chip);
+    });
+  }
+  renderLinks();
+
   const linksAdd = document.createElement('div');
   linksAdd.className = 'wl-links-add';
   const linkTypeSelect = document.createElement('select');
-  linkTypeSelect.innerHTML = '<option value="">Link to…</option><option value="task">Open todo task</option><option value="reminder">Reminder</option>';
+  linkTypeSelect.innerHTML = `
+    <option value="">Link to…</option>
+    <option value="wl">Work Log item</option>
+    <option value="clinical">Clinical</option>
+    <option value="cogito">Cogito</option>
+    <option value="reqproc">Req & Proc</option>
+    <option value="trustanalytics">Trust Analytics</option>
+  `;
   const linkItemSelect = document.createElement('select');
   linkItemSelect.style.cssText = 'flex:1;min-width:180px';
   linkItemSelect.innerHTML = '<option value="">— select item —</option>';
+
+  const HUB_MAP = {
+    wl:              () => (typeof wlItems !== 'undefined' ? wlItems : []),
+    clinical:        () => (typeof clinicalEntries !== 'undefined' ? clinicalEntries : []),
+    cogito:          () => (typeof cogitoEntries !== 'undefined' ? cogitoEntries : []),
+    reqproc:         () => (typeof reqprocEntries !== 'undefined' ? reqprocEntries : []),
+    trustanalytics:  () => (typeof trustanalyticsEntries !== 'undefined' ? trustanalyticsEntries : []),
+  };
+
+  linkTypeSelect.addEventListener('change', () => {
+    const entries = HUB_MAP[linkTypeSelect.value]?.() || [];
+    linkItemSelect.innerHTML = '<option value="">— select item —</option>';
+    entries.filter(e => !e.archived).forEach(e => {
+      const o = document.createElement('option');
+      o.value = e.id;
+      o.textContent = e.title || e.name || e.id;
+      linkItemSelect.appendChild(o);
+    });
+  });
+
   const addLinkBtn = document.createElement('button');
   addLinkBtn.className = 'tool-btn';
   addLinkBtn.textContent = '+ Add';
+  addLinkBtn.addEventListener('click', () => {
+    const type = linkTypeSelect.value;
+    const id   = linkItemSelect.value;
+    const title = linkItemSelect.options[linkItemSelect.selectedIndex]?.textContent;
+    if (!type || !id || !title || links.some(l => l.id === id)) return;
+    links.push({ type, id, title });
+    renderLinks();
+    linkTypeSelect.value = '';
+    linkItemSelect.innerHTML = '<option value="">— select item —</option>';
+  });
+
   linksAdd.append(linkTypeSelect, linkItemSelect, addLinkBtn);
   linksSection.append(linksLabel, linkedListEl, linksAdd);
+
+  // Expose collected links for callers to read on save
+  linksSection._getLinks = () => links.slice();
+
   return { linksSection, linkedListEl, linkTypeSelect, linkItemSelect, addLinkBtn };
 }
 
@@ -5232,18 +5327,43 @@ function buildWLActionBar(isTop) {
   addSectionBtn.textContent = '+ Add section';
   const barRight = document.createElement('div');
   barRight.style.cssText = 'margin-left:auto;display:flex;gap:8px';
-  const copyMdBtn = document.createElement('button');
-  copyMdBtn.className = 'tool-btn';
-  copyMdBtn.textContent = 'Copy .md';
-  const dlMdBtn = document.createElement('button');
-  dlMdBtn.className = 'tool-btn';
-  dlMdBtn.innerHTML = '&#8659; .md';
   const saveBtn = document.createElement('button');
   saveBtn.className = 'tool-btn primary';
   saveBtn.textContent = 'Save';
-  barRight.append(copyMdBtn, dlMdBtn, saveBtn);
+  barRight.append(saveBtn);
   bar.append(addSectionBtn, barRight);
-  return { bar, addSectionBtn, copyMdBtn, dlMdBtn, saveBtn };
+  // copyMdBtn/dlMdBtn are null — callers that destructure them will get undefined (safe)
+  return { bar, addSectionBtn, copyMdBtn: null, dlMdBtn: null, saveBtn };
+}
+
+// ── Shared edit modal footer: Delete + Archive ────────────────────
+function buildWLEditFooter({ onDelete, onArchive }) {
+  const footer = document.createElement('div');
+  footer.className = 'wl-modal-footer wl-edit-footer';
+  const delBtn = document.createElement('button');
+  delBtn.className = 'tool-btn wl-delete-btn';
+  delBtn.textContent = 'Delete';
+  delBtn.addEventListener('click', () => {
+    if (confirm('Delete this entry? This cannot be undone.')) onDelete();
+  });
+  const archBtn = document.createElement('button');
+  archBtn.className = 'tool-btn';
+  archBtn.textContent = 'Archive';
+  archBtn.style.marginLeft = 'auto';
+  archBtn.addEventListener('click', onArchive);
+  footer.append(delBtn, archBtn);
+  return footer;
+}
+
+// ── Global tag pool — aggregates tags from all entry hubs ─────────
+function getAllKnownTags() {
+  return [...new Set([
+    ...(typeof clinicalEntries !== 'undefined' ? clinicalEntries : []),
+    ...(typeof cogitoEntries   !== 'undefined' ? cogitoEntries   : []),
+    ...(typeof reqprocEntries  !== 'undefined' ? reqprocEntries  : []),
+    ...(typeof trustanalyticsEntries !== 'undefined' ? trustanalyticsEntries : []),
+    ...(typeof wlItems !== 'undefined' ? wlItems : []),
+  ].flatMap(e => e.tags || []))].sort();
 }
 
 function buildWLFormatBar() {
@@ -6144,22 +6264,9 @@ function createWLModal(editId) {
 
   // Shared action helpers
   function doAddSection() { sectionsEl.appendChild(buildWLSectionEditor({ title: '', content: '' })); }
-  function doCopyMd() {
-    const t = titleIn.value.trim() || 'Untitled';
-    const itm = { title: t, type: typeSelect.value, status: statusSelect.value, ticket: ticketIn.value.trim(), sections: collectWLSections(sectionsEl), updatedAt: new Date().toISOString() };
-    navigator.clipboard.writeText(buildWLItemMd(itm)).then(() => showToast('Copied to clipboard.'));
-  }
-  function doDlMd() {
-    const t = titleIn.value.trim() || 'Untitled';
-    const itm = { id: editId, title: t, type: typeSelect.value, status: statusSelect.value, ticket: ticketIn.value.trim(), sections: collectWLSections(sectionsEl), updatedAt: new Date().toISOString() };
-    downloadWLItemMd(itm).then(() => refreshDownloadStamp && refreshDownloadStamp());
-  }
-
   // Wire up all event listeners
   [saveBtn, saveBtnTop].forEach(b => b.addEventListener('click', saveModal));
   [addSectionBtn, addSectionBtnTop].forEach(b => b.addEventListener('click', doAddSection));
-  [copyMdBtn, copyMdBtnTop].forEach(b => b.addEventListener('click', doCopyMd));
-  [dlMdBtn, dlMdBtnTop].forEach(b => b.addEventListener('click', doDlMd));
   titleIn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveModal(); } });
 
   // On new items only: repopulate sections when type changes
