@@ -87,6 +87,11 @@ document.addEventListener('click', () => {
   if (w) w.classList.remove('open');
 });
 
+document.getElementById('modalBackdrop')?.addEventListener('click', () => {
+  const modals = [...document.querySelectorAll('.wl-float-modal.open')];
+  if (modals.length) closeWLModal(modals[modals.length - 1]);
+});
+
 let _confirmCallback = null;
 
 function showToast(msg, isError = false) {
@@ -2008,7 +2013,7 @@ function createRecModal(recId) {
   const body = document.createElement('div');
   body.className = 'rem-edit-body';
   modal.append(dragBar, body);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
 
   const removeListeners = setupWLModalDrag(modal, dragBar);
   function close() { removeListeners(); modal.remove(); }
@@ -2591,11 +2596,11 @@ function createClinicalEntryModal(editId, areaId) {
   const { bar: footer, addSectionBtn, copyMdBtn, dlMdBtn, saveBtn } = buildWLActionBar(false);
 
   modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
 
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
 
@@ -2705,10 +2710,10 @@ function openClinicalEntryViewModal(entryId) {
   footer.appendChild(editBtn);
 
   modal.append(dragBar, header, sectionsEl, footer);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
 
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -3065,11 +3070,11 @@ function createCogitoEntryModal(editId, areaId) {
   const { bar: footer, addSectionBtn, copyMdBtn, dlMdBtn, saveBtn } = buildWLActionBar(false);
 
   modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
 
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
 
@@ -3179,10 +3184,10 @@ function openCogitoEntryViewModal(entryId) {
   footer.appendChild(editBtn);
 
   modal.append(dragBar, header, sectionsEl, footer);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
 
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -3476,10 +3481,10 @@ function createReqprocEntryModal(editId, areaId) {
   const sectionsEl = buildWLSectionsContainer(entry, null);
   const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
   modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   async function saveModal() {
@@ -3540,9 +3545,9 @@ function openReqprocEntryViewModal(entryId) {
   const editBtn = document.createElement('button'); editBtn.className = 'tool-btn primary'; editBtn.innerHTML = '&#9998; Edit';
   footer.appendChild(editBtn);
   modal.append(dragBar, header, sectionsEl, footer);
-  document.body.appendChild(modal);
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  document.body.appendChild(modal); modal._openModal?.();
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -3799,10 +3804,10 @@ function createTrustanalyticsEntryModal(editId, areaId) {
   const sectionsEl = buildWLSectionsContainer(entry, null);
   const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
   modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   async function saveModal() {
@@ -3856,9 +3861,9 @@ function openTrustanalyticsEntryViewModal(entryId) {
   const footer = document.createElement('div'); footer.className = 'wl-modal-footer';
   const editBtn = document.createElement('button'); editBtn.className = 'tool-btn primary'; editBtn.innerHTML = '&#9998; Edit'; footer.appendChild(editBtn);
   modal.append(dragBar, header, sectionsEl, footer);
-  document.body.appendChild(modal);
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  document.body.appendChild(modal); modal._openModal?.();
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -4930,7 +4935,7 @@ function createTaskModal(taskId, weekKey) {
   body.className = 'rem-edit-body';
 
   modal.append(dragBar, body);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
 
   const removeListeners = setupWLModalDrag(modal, dragBar);
 
@@ -5134,6 +5139,40 @@ function createTaskModal(taskId, weekKey) {
 
 // ── WL modal factory — creates a self-contained draggable modal instance ──
 let _wlModalZ = 200;
+let _modalCount = 0;
+
+function showModalBackdrop() {
+  _modalCount++;
+  const bd = document.getElementById('modalBackdrop');
+  if (!bd) return;
+  bd.style.display = 'block';
+  requestAnimationFrame(() => bd.classList.add('active'));
+}
+
+function hideModalBackdrop() {
+  _modalCount = Math.max(0, _modalCount - 1);
+  if (_modalCount > 0) return;
+  const bd = document.getElementById('modalBackdrop');
+  if (!bd) return;
+  bd.classList.remove('active');
+  setTimeout(() => { if (_modalCount === 0) bd.style.display = 'none'; }, 240);
+}
+
+function closeWLModal(modal) {
+  if (!modal || modal._closing) return;
+  modal._closing = true;
+  const t = modal.style.transform || '';
+  if (t.includes('none') || (t.includes('px') && !t.includes('calc'))) {
+    modal.style.opacity = '0';
+  } else {
+    modal.style.transform = 'translate(-50%, calc(-50% + 16px))';
+    modal.style.opacity = '0';
+  }
+  hideModalBackdrop();
+  if (typeof modal._escHandler === 'function') document.removeEventListener('keydown', modal._escHandler);
+  if (typeof modal._dragCleanup === 'function') modal._dragCleanup();
+  setTimeout(() => modal.remove(), 240);
+}
 
 // ── WL Modal DOM builders ────────────────────────────────────────
 
@@ -5147,24 +5186,29 @@ function buildWLModalShell() {
   if (openCount > 0) {
     const offset = openCount * 28;
     modal.style.left = `calc(50% + ${offset}px)`;
-    modal.style.top  = `calc(5rem + ${offset}px)`;
-    modal.style.transform = 'translateX(-50%)';
+    modal.style.top  = `calc(50% + ${offset}px)`;
+    modal.style.transform = `translate(-50%, calc(-50% + 16px))`;
   }
   modal.addEventListener('mousedown', () => { modal.style.zIndex = ++_wlModalZ; });
+  modal._openModal = function() {
+    showModalBackdrop();
+    requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('animate-in')));
+    const escHandler = e => { if (e.key === 'Escape') closeWLModal(modal); };
+    document.addEventListener('keydown', escHandler);
+    modal._escHandler = escHandler;
+  };
   return modal;
 }
 
 function buildWLModalDragBar() {
   const dragBar = document.createElement('div');
   dragBar.className = 'wl-drag-bar';
-  const dragDots = document.createElement('span');
-  dragDots.innerHTML = '&#8943;';
   const popoutBtn = document.createElement('button');
   popoutBtn.className = 'wl-popout-btn';
   popoutBtn.title = 'Pop out to separate window';
   popoutBtn.setAttribute('aria-label', 'Pop out to separate window');
   popoutBtn.innerHTML = '&#x2922;';
-  dragBar.append(dragDots, popoutBtn);
+  dragBar.append(popoutBtn);
   return { dragBar, popoutBtn };
 }
 
@@ -5470,7 +5514,7 @@ function createReminderModal(remId) {
   body.className = 'rem-edit-body';
 
   modal.append(dragBar, body);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
 
   const removeListeners = setupWLModalDrag(modal, dragBar);
 
@@ -5847,10 +5891,10 @@ function openWLViewModal(itemId) {
   footer.append(editBtn, barRight);
 
   modal.append(dragBar, header, sectionsEl, footer);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
 
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -6013,12 +6057,12 @@ function createWLModal(editId) {
   linkedSnipsSection.append(lsHeader, lsBody);
 
   modal.append(dragBar, header, ticketRow, linksSection, topBar, formatBar, sectionsEl, linkedSnipsSection, footer, downloadStamp);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
 
   // Setup drag — returns cleanup fn used by closeModal
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
 
   
   closeBtn.addEventListener('click', closeModal);
@@ -7716,9 +7760,9 @@ function createGuideModal(editId) {
   footer.append(addSecBtn, saveBtn);
 
   modal.append(dragBar, header, tagsRow, formatBar, sectionsEl, footer);
-  document.body.appendChild(modal);
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  document.body.appendChild(modal); modal._openModal?.();
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => {
@@ -7846,9 +7890,9 @@ function openGuideViewModal(guideId) {
   footer.appendChild(editBtn);
 
   modal.append(dragBar, header, body, footer);
-  document.body.appendChild(modal);
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  document.body.appendChild(modal); modal._openModal?.();
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -7928,6 +7972,7 @@ function createContactModal(contactId = null) {
   const item = contactId ? contactItems.find(c => c.id === contactId) : null;
 
   const modal = buildWLModalShell();
+  modal.style.width = 'min(560px, 96vw)';
   modal.dataset.contactEditId = contactId || 'new';
   const { dragBar, popoutBtn } = buildWLModalDragBar();
   popoutBtn.style.display = 'none';
@@ -7935,59 +7980,51 @@ function createContactModal(contactId = null) {
   const header = document.createElement('div');
   header.className = 'wl-modal-header';
   const titleEl = document.createElement('div');
-  titleEl.className = 'wl-view-title';
-  titleEl.style.fontSize = '14px';
+  titleEl.className = 'wl-modal-title-text';
   titleEl.textContent = item ? 'Edit contact' : 'New contact';
   const closeBtn = document.createElement('button');
-  closeBtn.className = 'icon-btn wl-close-btn';
-  closeBtn.style.cssText = 'font-size:18px;opacity:0.6;margin-left:auto';
+  closeBtn.className = 'wl-close-btn';
   closeBtn.innerHTML = '&#x2715;';
   header.append(titleEl, closeBtn);
 
-  const formBody = document.createElement('div');
-  formBody.style.cssText = 'padding:12px 16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1';
-
-  function mkField(labelText, input) {
+  function mkRow(labelText, input, alignTop = false) {
     const row = document.createElement('div');
-    row.className = 'contact-form-row';
+    row.className = 'form-row' + (alignTop ? ' align-top' : '');
     const lbl = document.createElement('label');
-    lbl.className = 'contact-form-label';
+    lbl.className = 'form-label';
     lbl.textContent = labelText;
     row.append(lbl, input);
     return row;
   }
 
-  const nameIn  = Object.assign(document.createElement('input'),  { type: 'text',  className: 'wl-title-input',  placeholder: 'Full name…',           value: item?.name  || '' });
-  const roleIn  = Object.assign(document.createElement('input'),  { type: 'text',  className: 'wl-ticket-input', placeholder: 'Role…',                 value: item?.role  || '' });
-  const teamIn  = Object.assign(document.createElement('input'),  { type: 'text',  className: 'wl-ticket-input', placeholder: 'Team…',                 value: item?.team  || '' });
-  const emailIn = Object.assign(document.createElement('input'),  { type: 'email', className: 'wl-ticket-input', placeholder: 'Email (optional)…',     value: item?.email || '' });
-  const tagsIn  = Object.assign(document.createElement('input'),  { type: 'text',  className: 'snip-tags-input', placeholder: 'Tags (comma-separated)…', value: (item?.tags || []).join(', ') });
-  const notesIn = Object.assign(document.createElement('textarea'), { className: 'wl-editor', placeholder: 'Notes (markdown supported)…', value: item?.notes || '' });
-  notesIn.rows = 4;
-  notesIn.style.cssText = 'resize:vertical;min-height:72px;font-family:var(--font-mono);font-size:12px;width:100%';
+  const nameIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'form-input', placeholder: 'Full name…',           value: item?.name  || '' });
+  const roleIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'form-input', placeholder: 'Role…',                 value: item?.role  || '' });
+  const teamIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'form-input', placeholder: 'Team…',                 value: item?.team  || '' });
+  const emailIn = Object.assign(document.createElement('input'),    { type: 'email', className: 'form-input', placeholder: 'Email (optional)…',     value: item?.email || '' });
+  const tagsIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'form-input', placeholder: 'Comma-separated tags…', value: (item?.tags || []).join(', ') });
+  const notesIn = Object.assign(document.createElement('textarea'), { className: 'form-textarea',             placeholder: 'Notes (markdown supported)…', value: item?.notes || '' });
 
-  formBody.append(
-    mkField('Name *', nameIn),
-    mkField('Role', roleIn),
-    mkField('Team', teamIn),
-    mkField('Email', emailIn),
-    mkField('Tags', tagsIn),
-    mkField('Notes', notesIn)
-  );
+  const group1 = document.createElement('div'); group1.className = 'form-group';
+  group1.append(mkRow('Name *', nameIn), mkRow('Role', roleIn), mkRow('Team', teamIn), mkRow('Email', emailIn));
+  const group2 = document.createElement('div'); group2.className = 'form-group';
+  group2.append(mkRow('Tags', tagsIn), mkRow('Notes', notesIn, true));
+
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  body.append(group1, group2);
 
   const footer = document.createElement('div');
   footer.className = 'wl-modal-footer';
   const saveBtn = document.createElement('button');
   saveBtn.className = 'tool-btn primary';
-  saveBtn.style.marginLeft = 'auto';
   saveBtn.textContent = 'Save';
   footer.appendChild(saveBtn);
 
-  modal.append(dragBar, header, formBody, footer);
-  document.body.appendChild(modal);
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
-  
+  modal.append(dragBar, header, body, footer);
+  document.body.appendChild(modal); modal._openModal?.();
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
+
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); doSave(); }
@@ -8146,14 +8183,12 @@ function createDatabaseModal(editId = null) {
   const item = editId ? dbAccessItems.find(d => d.id === editId) : null;
 
   const modal = buildWLModalShell();
-  modal.style.maxWidth = '600px';
-  modal.style.width = '96vw';
+  modal.style.width = 'min(580px, 96vw)';
   const { dragBar, popoutBtn } = buildWLModalDragBar();
   popoutBtn.style.display = 'none';
 
   const closeBtn = document.createElement('button');
-  closeBtn.className = 'icon-btn wl-close-btn';
-  closeBtn.style.cssText = 'font-size:18px;opacity:0.6;margin-left:auto;flex-shrink:0';
+  closeBtn.className = 'wl-close-btn';
   closeBtn.innerHTML = '&#x2715;';
 
   const header = document.createElement('div');
@@ -8163,12 +8198,18 @@ function createDatabaseModal(editId = null) {
   titleIn.placeholder = 'Connection name…'; titleIn.value = item?.name || '';
   header.append(titleIn, closeBtn);
 
-  const formBody = document.createElement('div');
-  formBody.style.cssText = 'padding:10px 16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1';
-
+  function mkRow(labelText, input, alignTop = false) {
+    const row = document.createElement('div');
+    row.className = 'form-row' + (alignTop ? ' align-top' : '');
+    const lbl = document.createElement('label');
+    lbl.className = 'form-label';
+    lbl.textContent = labelText;
+    row.append(lbl, input);
+    return row;
+  }
   function mkSelect(id, options, val) {
     const sel = document.createElement('select');
-    sel.id = id; sel.className = 'wl-filter'; sel.style.flex = '1';
+    sel.id = id; sel.className = 'form-select';
     options.forEach(o => {
       const opt = document.createElement('option');
       opt.value = o; opt.textContent = o;
@@ -8179,29 +8220,20 @@ function createDatabaseModal(editId = null) {
   }
   function mkText(id, placeholder, val) {
     const inp = document.createElement('input');
-    inp.type = 'text'; inp.id = id; inp.className = 'knowledge-link-input';
-    inp.placeholder = placeholder; inp.value = val || ''; inp.style.flex = '1';
+    inp.type = 'text'; inp.id = id; inp.className = 'form-input';
+    inp.placeholder = placeholder; inp.value = val || '';
     return inp;
   }
-  function mkRow(labelText, input) {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:10px';
-    const lbl = document.createElement('label');
-    lbl.style.cssText = 'font-family:var(--font-mono);font-size:11px;color:var(--text-faint);width:72px;flex-shrink:0;text-align:right';
-    lbl.textContent = labelText;
-    row.append(lbl, input);
-    return row;
-  }
 
-  // Row 1: Type (select)
-  const typeIn = mkSelect('dbTypeIn', DB_TYPES, item?.type || 'Caboodle');
+  const typeIn   = mkSelect('dbTypeIn',   DB_TYPES,           item?.type         || 'Caboodle');
+  const envIn    = mkSelect('dbEnvIn',    DB_ENVS,            item?.env          || 'PROD');
+  const accessIn = mkSelect('dbAccessIn', DB_ACCESS_METHODS,  item?.accessMethod || 'Jump server');
+  const jumpIn   = mkText('dbJumpIn',   'e.g. atos-jump.gstt.nhs.uk', item?.jumpServer);
+  const serverIn = mkText('dbServerIn', 'DB server / host name',      item?.dbServer);
+  const portIn   = mkText('dbPortIn',   'Port (optional, e.g. 1433)', item?.port);
+  const notesIn  = Object.assign(document.createElement('textarea'), { className: 'form-textarea', value: item?.notes || '' });
+  notesIn.placeholder = 'Credentials location, quirks…';
 
-  // Row 2: Org multi-select pills
-  const orgRow = document.createElement('div');
-  orgRow.style.cssText = 'display:flex;align-items:center;gap:10px';
-  const orgLbl = document.createElement('label');
-  orgLbl.style.cssText = 'font-family:var(--font-mono);font-size:11px;color:var(--text-faint);width:72px;flex-shrink:0;text-align:right';
-  orgLbl.textContent = 'Org(s)';
   const orgPills = document.createElement('div');
   orgPills.className = 'db-org-pills-input';
   const currentOrgs = getDbOrgs(item);
@@ -8212,32 +8244,17 @@ function createDatabaseModal(editId = null) {
     btn.addEventListener('click', () => btn.classList.toggle('active'));
     orgPills.appendChild(btn);
   });
-  orgRow.append(orgLbl, orgPills);
 
-  const envIn        = mkSelect('dbEnvIn',    DB_ENVS,           item?.env          || 'Production');
-  const accessIn     = mkSelect('dbAccessIn', DB_ACCESS_METHODS, item?.accessMethod || 'Jump server');
-  const jumpIn       = mkText('dbJumpIn',   'e.g. atos-jump.gstt.nhs.uk', item?.jumpServer);
-  const serverIn     = mkText('dbServerIn', 'DB server / host name',      item?.dbServer);
-  const portIn       = mkText('dbPortIn',   'Port (optional, e.g. 1433)', item?.port);
+  const group1 = document.createElement('div'); group1.className = 'form-group';
+  group1.append(mkRow('Type', typeIn), mkRow('Org(s)', orgPills), mkRow('Env', envIn), mkRow('Access', accessIn));
+  const group2 = document.createElement('div'); group2.className = 'form-group';
+  group2.append(mkRow('Jump', jumpIn), mkRow('Server', serverIn), mkRow('Port', portIn));
+  const group3 = document.createElement('div'); group3.className = 'form-group';
+  group3.append(mkRow('Notes', notesIn, true));
 
-  const notesLbl = document.createElement('span');
-  notesLbl.style.cssText = 'font-family:var(--font-mono);font-size:11px;color:var(--text-faint)';
-  notesLbl.textContent = 'Notes (credentials location, quirks…)';
-  const notesIn = document.createElement('textarea');
-  notesIn.className = 'wl-editor'; notesIn.style.cssText = 'min-height:100px;resize:vertical';
-  notesIn.value = item?.notes || '';
-
-  formBody.append(
-    mkRow('Type', typeIn),
-    orgRow,
-    mkRow('Environment', envIn),
-    mkRow('Access via', accessIn),
-    mkRow('Jump server', jumpIn),
-    mkRow('DB server', serverIn),
-    mkRow('Port', portIn),
-    notesLbl,
-    notesIn
-  );
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  body.append(group1, group2, group3);
 
   const footer = document.createElement('div');
   footer.className = 'wl-modal-footer';
@@ -8246,11 +8263,11 @@ function createDatabaseModal(editId = null) {
   saveBtn.textContent = item ? 'Save changes' : 'Add entry';
   footer.appendChild(saveBtn);
 
-  modal.append(dragBar, header, formBody, footer);
-  document.body.appendChild(modal);
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
-  
+  modal.append(dragBar, header, body, footer);
+  document.body.appendChild(modal); modal._openModal?.();
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
+
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveBtn.click(); }
@@ -8360,9 +8377,9 @@ function openDatabaseViewModal(itemId) {
   footer.appendChild(editBtn);
 
   modal.append(dragBar, header, body, footer);
-  document.body.appendChild(modal);
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  document.body.appendChild(modal); modal._openModal?.();
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -8628,9 +8645,9 @@ function openSnipViewModal(itemId) {
   if (infoBar) appendItems.push(infoBar);
   appendItems.push(body, footer);
   modal.append(...appendItems);
-  document.body.appendChild(modal);
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  document.body.appendChild(modal); modal._openModal?.();
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
@@ -8665,6 +8682,7 @@ function createSnipModal(editId) {
   const item = editId ? snipItems.find(s => s.id === editId) : null;
 
   const modal = buildWLModalShell();
+  modal.style.width = 'min(720px, 96vw)';
   if (editId) modal.dataset.snipEditId = editId;
   const { dragBar, popoutBtn } = buildWLModalDragBar();
   popoutBtn.style.display = 'none';
@@ -8684,50 +8702,28 @@ function createSnipModal(editId) {
   });
   sourceSelect.value = item ? item.source : 'Caboodle';
   const closeBtn = document.createElement('button');
-  closeBtn.className = 'icon-btn wl-close-btn';
-  closeBtn.style.cssText = 'font-size:18px;opacity:0.6';
+  closeBtn.className = 'wl-close-btn';
   closeBtn.innerHTML = '&#x2715;';
   header.append(titleIn, sourceSelect, closeBtn);
 
-  const tagsRow = document.createElement('div');
-  tagsRow.className = 'snip-tags-row';
-  const tagsLabel = document.createElement('label');
-  tagsLabel.textContent = 'Tags (comma-separated):';
-  tagsLabel.className = 'snip-tags-label';
-  const tagsIn = document.createElement('input');
-  tagsIn.type = 'text'; tagsIn.className = 'snip-tags-input';
-  tagsIn.placeholder = 'e.g. encounter, wl, inpatient';
-  tagsIn.value = item ? (item.tags || []).join(', ') : '';
-  tagsRow.append(tagsLabel, tagsIn);
-
-  const metaFieldsRow = document.createElement('div');
-  metaFieldsRow.className = 'snip-tags-row';
-  const rootLabel = document.createElement('label');
-  rootLabel.textContent = 'Root table:';
-  rootLabel.className = 'snip-tags-label';
-  const rootIn = document.createElement('input');
-  rootIn.type = 'text'; rootIn.className = 'snip-tags-input';
-  rootIn.placeholder = 'e.g. DIM_Patient, F_Encounter';
-  rootIn.value = item ? (item.rootTable || '') : '';
-  rootIn.style.flex = '1';
-  const granSep = document.createElement('span');
-  granSep.className = 'snip-tags-label';
-  granSep.textContent = 'Granularity:';
+  // Metadata grouped fields
   const granListId = 'snipGranList_' + Date.now();
-  const granIn = document.createElement('input');
-  granIn.type = 'text'; granIn.className = 'snip-tags-input';
-  granIn.placeholder = 'e.g. one row per encounter';
-  granIn.value = item ? (item.granularity || '') : '';
+  const tagsIn = Object.assign(document.createElement('input'), { type: 'text', className: 'form-input', placeholder: 'e.g. encounter, wl, inpatient', value: item ? (item.tags || []).join(', ') : '' });
+  const rootIn = Object.assign(document.createElement('input'), { type: 'text', className: 'form-input', placeholder: 'e.g. DIM_Patient, F_Encounter',  value: item ? (item.rootTable   || '') : '' });
+  const granIn = Object.assign(document.createElement('input'), { type: 'text', className: 'form-input', placeholder: 'e.g. one row per encounter',      value: item ? (item.granularity || '') : '' });
   granIn.setAttribute('list', granListId);
-  granIn.style.flex = '2';
   const granList = document.createElement('datalist');
   granList.id = granListId;
-  loadGranularities().forEach(g => {
-    const opt = document.createElement('option');
-    opt.value = g;
-    granList.appendChild(opt);
-  });
-  metaFieldsRow.append(rootLabel, rootIn, granSep, granIn, granList);
+  loadGranularities().forEach(g => { const opt = document.createElement('option'); opt.value = g; granList.appendChild(opt); });
+
+  function mkMetaRow(labelText, input) {
+    const row = document.createElement('div'); row.className = 'form-row';
+    const lbl = document.createElement('label'); lbl.className = 'form-label'; lbl.textContent = labelText;
+    row.append(lbl, input);
+    return row;
+  }
+  const metaGroup = document.createElement('div'); metaGroup.className = 'form-group';
+  metaGroup.append(mkMetaRow('Tags', tagsIn), mkMetaRow('Root table', rootIn), mkMetaRow('Granularity', granIn), granList);
 
   const queryWrap = document.createElement('div');
   queryWrap.className = 'snip-query-wrap';
@@ -8764,16 +8760,17 @@ function createSnipModal(editId) {
   const saveBtn = document.createElement('button');
   saveBtn.className = 'tool-btn primary';
   saveBtn.textContent = 'Save';
-  const barRight = document.createElement('div');
-  barRight.style.cssText = 'margin-left:auto;display:flex;gap:8px';
-  barRight.appendChild(saveBtn);
-  footer.appendChild(barRight);
+  footer.appendChild(saveBtn);
 
-  modal.append(dragBar, header, tagsRow, metaFieldsRow, queryWrap, notesWrap, footer);
-  document.body.appendChild(modal);
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
-  
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  body.append(metaGroup, queryWrap, notesWrap);
+
+  modal.append(dragBar, header, body, footer);
+  document.body.appendChild(modal); modal._openModal?.();
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
+
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); doSave(); }
@@ -9159,8 +9156,8 @@ function calAddTaskModal(dateISO, timeStr) {
   const modal = buildWLModalShell();
   const { dragBar, popoutBtn } = buildWLModalDragBar();
   popoutBtn.style.display = 'none';
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
 
   const header = document.createElement('div');
@@ -9191,7 +9188,7 @@ function calAddTaskModal(dateISO, timeStr) {
       <button class="tool-btn primary" id="_calTaskSave">Add Task</button>
     </div>`;
   modal.append(dragBar, header, body);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
   requestAnimationFrame(() => modal.querySelector('#_calTaskName').focus());
   modal.querySelector('#_calTaskCancel').onclick = closeModal;
   modal.querySelector('#_calTaskSave').onclick = () => {
@@ -9215,8 +9212,8 @@ function calAddReminderModal(dateISO, timeStr) {
   const modal = buildWLModalShell();
   const { dragBar, popoutBtn } = buildWLModalDragBar();
   popoutBtn.style.display = 'none';
-  const dragCleanup = setupWLModalDrag(modal, dragBar);
-  function closeModal() { dragCleanup(); modal.remove(); }
+  modal._dragCleanup = setupWLModalDrag(modal, dragBar);
+  function closeModal() { closeWLModal(modal); }
   
 
   const header = document.createElement('div');
@@ -9247,7 +9244,7 @@ function calAddReminderModal(dateISO, timeStr) {
       <button class="tool-btn primary" id="_calRemSave">Add Reminder</button>
     </div>`;
   modal.append(dragBar, header, body);
-  document.body.appendChild(modal);
+  document.body.appendChild(modal); modal._openModal?.();
   requestAnimationFrame(() => modal.querySelector('#_calRemText').focus());
   modal.querySelector('#_calRemCancel').onclick = closeModal;
   modal.querySelector('#_calRemSave').onclick = () => {
