@@ -2872,6 +2872,21 @@
     min-width: 80px;
   }
 
+  /* Delete + Archive footer */
+  .wl-edit-footer { border-top: 1px solid var(--border-light); }
+  .wl-delete-btn:hover { background: #fee2e2; color: #dc2626; border-color: #dc2626; }
+
+  /* View section collapsible chevron */
+  .wl-view-section-chevron {
+    background: none; border: none; cursor: pointer;
+    font-size: 10px; color: var(--text-faint); padding: 0 4px 0 0;
+    transition: transform 0.15s; display: inline-block; flex-shrink: 0;
+  }
+  .wl-view-section.collapsed .wl-view-section-chevron { transform: rotate(-90deg); }
+  .wl-view-section.collapsed .wl-view-section-body { display: none; }
+  .wl-view-section-title { cursor: pointer; user-select: none; }
+  .wl-view-section-title:hover { background: rgba(var(--accent-rgb), 0.06); }
+
   /* ── WL linked items ── */
   .wl-links-section {
     padding: 10px 14px;
