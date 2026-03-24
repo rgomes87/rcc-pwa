@@ -4604,7 +4604,12 @@ function buildWLSectionEditor(section) {
   headerDiv.addEventListener('click', () => div.classList.toggle('collapsed'));
 
   // Drag-to-reorder within .wl-sections
-  div.setAttribute('draggable', 'true');
+  // Start as false — only enable dragging when mousedown is on the drag handle,
+  // preventing text-selection in the editor from triggering a drag.
+  div.setAttribute('draggable', 'false');
+  dragHandle.addEventListener('mousedown', () => div.setAttribute('draggable', 'true'));
+  div.addEventListener('mousedown', e => { if (!dragHandle.contains(e.target)) div.setAttribute('draggable', 'false'); });
+  div.addEventListener('dragend', () => div.setAttribute('draggable', 'false'));
   div.addEventListener('dragstart', e => {
     e.stopPropagation();
     e.dataTransfer.effectAllowed = 'move';
@@ -4644,145 +4649,72 @@ function buildWLSectionEditor(section) {
     container.insertBefore(src, after ? div.nextSibling : div);
   });
 
-  const placeholders = { Overview: 'Overview…', Notes: 'Notes…', 'Next steps': 'Next steps…' };
-  const editor = document.createElement('div');
-  editor.className = 'wl-editor';
-  editor.contentEditable = 'true';
-  editor.setAttribute('role', 'textbox');
-  editor.setAttribute('aria-multiline', 'true');
-  editor.setAttribute('aria-label', section.title || 'Section content');
-  editor.dataset.placeholder = section.hint || placeholders[section.title] || 'Type here…';
+  // ── CodeMirror 6 editor ──────────────────────────────────────────
+  const editorWrap = document.createElement('div');
+  editorWrap.className = 'wl-cm-wrap';
 
   div.appendChild(headerDiv);
-  div.appendChild(editor);
+  div.appendChild(editorWrap);
 
-  // Restore content: nodes is array of {type:'text'|'image', value:string}
-  function restoreContent() {
-    editor.innerHTML = '';
-    const nodes = section.nodes || [];
-    if (nodes.length === 0 && section.content) {
-      // Migrate from old content string
-      editor.appendChild(document.createTextNode(section.content));
-      if (section.images && section.images.length) {
-        section.images.forEach(src => insertImageNode(src, null));
-      }
-    } else {
-      nodes.forEach(node => {
-        if (node.type === 'markdown' || node.type === 'text') {
-          if (editor.childNodes.length > 0) editor.appendChild(document.createElement('br'));
-          const lines = (node.value || '').split('\n');
-          lines.forEach((line, i) => {
-            if (i > 0) editor.appendChild(document.createElement('br'));
-            editor.appendChild(document.createTextNode(line));
-          });
-        } else if (node.type === 'html') {
-          // Migrate: convert stored HTML to markdown text
-          if (editor.childNodes.length > 0) editor.appendChild(document.createElement('br'));
-          const md = (node.value || '')
-            .replace(/<h1>([\s\S]*?)<\/h1>/gi, '# $1')
-            .replace(/<h2>([\s\S]*?)<\/h2>/gi, '## $1')
-            .replace(/<h3>([\s\S]*?)<\/h3>/gi, '### $1')
-            .replace(/<br\s*\/?>/gi, '\n')
-            .replace(/<strong>([\s\S]*?)<\/strong>/gi, '**$1**')
-            .replace(/<b>([\s\S]*?)<\/b>/gi, '**$1**')
-            .replace(/<em>([\s\S]*?)<\/em>/gi, '*$1*')
-            .replace(/<i>([\s\S]*?)<\/i>/gi, '*$1*')
-            .replace(/<u>([\s\S]*?)<\/u>/gi, '<u>$1</u>')
-            .replace(/<[^>]+>/g, '')
-            .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-          const lines = md.split('\n');
-          lines.forEach((line, i) => {
-            if (i > 0) editor.appendChild(document.createElement('br'));
-            editor.appendChild(document.createTextNode(line));
-          });
-        } else if (node.type === 'image') {
-          const img = createImgEl(node.value);
-          editor.appendChild(img);
-          editor.appendChild(document.createElement('br'));
+  const initialMd = buildSectionMdText(section);
+
+  // Mount CM6 asynchronously (will be ready well before user interaction)
+  (async () => {
+    const { EditorView, EditorState, basicSetup, markdown, closeBrackets } = await waitForCM6();
+    const appTheme = EditorView.theme({
+      '&': { background: 'var(--bg)', color: 'var(--text)', fontFamily: 'var(--font-mono)', fontSize: '13px' },
+      '.cm-content': { padding: '8px 12px', minHeight: '80px', caretColor: 'var(--accent)' },
+      '.cm-focused': { outline: 'none' },
+      '.cm-line': { lineHeight: '1.65' },
+      '.cm-gutters': { background: 'var(--surface)', borderRight: '1px solid var(--border-light)', color: 'var(--text-faint)', minWidth: '32px' },
+      '.cm-activeLineGutter': { background: 'var(--border-light)' },
+      '.cm-selectionBackground, ::selection': { background: 'rgba(var(--accent-rgb),0.18) !important' },
+    });
+    const state = EditorState.create({
+      doc: initialMd,
+      extensions: [basicSetup, markdown(), closeBrackets(), appTheme, EditorView.lineWrapping],
+    });
+    div._cmView = new EditorView({ state, parent: editorWrap });
+
+    // Image paste support
+    editorWrap.addEventListener('paste', e => {
+      const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items || [];
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const reader = new FileReader();
+          reader.onload = evt => {
+            compressImage(evt.target.result, src => {
+              const view = div._cmView;
+              if (!view) return;
+              const { from, to } = view.state.selection.main;
+              view.dispatch({ changes: { from, to, insert: `![](${src})\n` } });
+            });
+          };
+          reader.readAsDataURL(item.getAsFile());
+          return;
         }
-      });
-    }
-  }
-
-  function createImgEl(src) {
-    const img = document.createElement('img');
-    img.src = src;
-    img.dataset.imgSrc = src;
-    img.addEventListener('click', () => openLightbox(src));
-    img.addEventListener('keydown', e => { if (e.key === 'Delete' || e.key === 'Backspace') img.remove(); });
-    return img;
-  }
-
-  function insertImageNode(src, afterNode) {
-    const img = createImgEl(src);
-    const br = document.createElement('br');
-    if (afterNode) {
-      afterNode.after(img);
-      img.after(br);
-    } else {
-      editor.appendChild(img);
-      editor.appendChild(br);
-    }
-    return img;
-  }
-
-  function insertImageAtCursor(src) {
-    editor.focus();
-    const sel = window.getSelection();
-    let inserted = false;
-    if (sel && sel.rangeCount > 0 && editor.contains(sel.anchorNode)) {
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      const img = createImgEl(src);
-      const br = document.createElement('br');
-      range.insertNode(br);
-      range.insertNode(img);
-      range.setStartAfter(br);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      inserted = true;
-    }
-    if (!inserted) insertImageNode(src, null);
-  }
-
-  restoreContent();
-
-  // Paste handler — images go inline at cursor
-  editor.addEventListener('paste', e => {
-    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        e.preventDefault();
-        const reader = new FileReader();
-        reader.onload = evt => compressImage(evt.target.result, insertImageAtCursor);
-        reader.readAsDataURL(item.getAsFile());
-        return;
       }
-    }
-    // Plain text paste — strip HTML, insert via Selection API
-    e.preventDefault();
-    const text = (e.clipboardData || e.originalEvent.clipboardData).getData('text/plain');
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount) {
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(document.createTextNode(text));
-      range.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-  });
+    });
+  })();
 
-  // Insert image button
-  headerDiv.querySelector('.wl-insert-img-btn').addEventListener('click', e => { e.stopPropagation();
+  // Insert image button (file picker)
+  headerDiv.querySelector('.wl-insert-img-btn').addEventListener('click', e => {
+    e.stopPropagation();
     const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
+    input.type = 'file'; input.accept = 'image/*';
     input.onchange = () => {
       if (!input.files[0]) return;
       const reader = new FileReader();
-      reader.onload = evt => insertImageAtCursor(evt.target.result);
+      reader.onload = evt => {
+        compressImage(evt.target.result, src => {
+          const view = div._cmView;
+          if (!view) return;
+          const { from, to } = view.state.selection.main;
+          view.dispatch({ changes: { from, to, insert: `![](${src})\n` } });
+          view.focus();
+        });
+      };
       reader.readAsDataURL(input.files[0]);
     };
     input.click();
@@ -4795,41 +4727,12 @@ function buildWLSectionEditor(section) {
 
 function collectWLSections(container) {
   return Array.from((container || document).querySelectorAll('.wl-section-editor')).map(el => {
-    const nameInput = el.querySelector('.wl-section-name-input');
+    const nameInput  = el.querySelector('.wl-section-name-input');
     const nameLocked = el.querySelector('.wl-section-name-locked');
     const title = nameInput ? (nameInput.value.trim() || 'Notes') : (nameLocked ? nameLocked.textContent : 'Notes');
-    const editor = el.querySelector('.wl-editor');
-    const nodes = [];
-    let textBuffer = '';
-
-    function flushText() {
-      const trimmed = textBuffer.replace(/\n+$/, '');
-      if (trimmed) nodes.push({ type: 'markdown', value: trimmed });
-      textBuffer = '';
-    }
-
-    function walkNode(node) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        textBuffer += node.textContent;
-      } else if (node.nodeName === 'BR') {
-        textBuffer += '\n';
-      } else if (node.nodeName === 'IMG' && node.dataset.imgSrc) {
-        flushText();
-        nodes.push({ type: 'image', value: node.dataset.imgSrc });
-      } else if (node.nodeName === 'DIV' || node.nodeName === 'P') {
-        node.childNodes.forEach(walkNode);
-        if (!textBuffer.endsWith('\n')) textBuffer += '\n';
-      } else if (node.childNodes) {
-        node.childNodes.forEach(walkNode);
-      }
-    }
-
-    editor.childNodes.forEach(walkNode);
-    flushText();
-
-    // Clean trailing empty nodes
-    while (nodes.length > 0 && nodes[nodes.length-1].type === 'markdown' && !nodes[nodes.length-1].value.trim()) nodes.pop();
-
+    // CM6 editor — read from EditorView state
+    const value = el._cmView ? el._cmView.state.doc.toString() : (el._cmLastSource || '');
+    const nodes = value.trim() ? [{ type: 'text', value }] : [];
     return { title, nodes };
   });
 }
@@ -5137,6 +5040,31 @@ function createTaskModal(taskId, weekKey) {
   renderView();
 }
 
+// ── CodeMirror 6 loader ───────────────────────────────────────────
+function waitForCM6() {
+  if (window.CM6) return Promise.resolve(window.CM6);
+  return new Promise(r => window.addEventListener('cm6loaded', () => r(window.CM6), { once: true }));
+}
+
+// Convert stored nodes[] → plain markdown string for CM6 initial value
+function buildSectionMdText(section) {
+  const nodes = section.nodes || [];
+  if (nodes.length === 0 && section.content) return section.content;
+  return nodes.map(n => {
+    if (n.type === 'image') return `![](${n.value})`;
+    if (n.type === 'html') {
+      // Migrate stored HTML to markdown
+      return (n.value || '')
+        .replace(/<h1>([\s\S]*?)<\/h1>/gi, '# $1').replace(/<h2>([\s\S]*?)<\/h2>/gi, '## $1')
+        .replace(/<h3>([\s\S]*?)<\/h3>/gi, '### $1').replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<strong>([\s\S]*?)<\/strong>/gi, '**$1**').replace(/<b>([\s\S]*?)<\/b>/gi, '**$1**')
+        .replace(/<em>([\s\S]*?)<\/em>/gi, '*$1*').replace(/<i>([\s\S]*?)<\/i>/gi, '*$1*')
+        .replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    }
+    return n.value || '';
+  }).join('\n');
+}
+
 // ── WL modal factory — creates a self-contained draggable modal instance ──
 let _wlModalZ = 200;
 let _modalCount = 0;
@@ -5322,40 +5250,144 @@ function buildWLFormatBar() {
   const formatBar = document.createElement('div');
   formatBar.className = 'wl-format-bar';
   formatBar.style.cssText = 'border-top:none;border-bottom:1px solid var(--border-light);flex-shrink:0';
-  function insertMdAtCursor(before, after) {
-    const activeEditor = document.activeElement;
-    if (!activeEditor || !activeEditor.classList.contains('wl-editor')) return;
-    const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return;
-    const selected = sel.toString();
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
-    range.insertNode(document.createTextNode(before + selected + after));
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
+
+  // Find the CM6 EditorView that currently has focus (or was last focused)
+  let _lastFocusedView = null;
+  document.addEventListener('focusin', e => {
+    const wrap = e.target.closest('.wl-cm-wrap');
+    if (wrap) {
+      const sec = wrap.closest('.wl-section-editor');
+      if (sec?._cmView) _lastFocusedView = sec._cmView;
+    }
+  }, true);
+
+  function getFocusedView() {
+    const wrap = document.querySelector('.wl-cm-wrap:focus-within');
+    if (wrap) {
+      const sec = wrap.closest('.wl-section-editor');
+      if (sec?._cmView) return sec._cmView;
+    }
+    return _lastFocusedView;
   }
+
+  function insertMdAtCursor(before, after) {
+    const view = getFocusedView();
+    if (!view) return;
+    const { from, to } = view.state.selection.main;
+    const selected = view.state.sliceDoc(from, to);
+    view.dispatch({
+      changes: { from, to, insert: before + selected + after },
+      selection: { anchor: from + before.length + selected.length + after.length },
+    });
+    view.focus();
+  }
+
+  // Track per-formatBar state for toggleable buttons
+  let _vimEnabled = false;
+  let _lineNumsEnabled = false;
+
+  function toggleVim(btn) {
+    _vimEnabled = !_vimEnabled;
+    btn.classList.toggle('wl-fmt-btn-active', _vimEnabled);
+    // Apply to all open CM6 views in this modal
+    const modal = btn.closest('.wl-float-modal');
+    if (!modal) return;
+    (async () => {
+      const { EditorView, EditorState, basicSetup, markdown, closeBrackets, vim } = await waitForCM6();
+      modal.querySelectorAll('.wl-section-editor').forEach(sec => {
+        if (!sec._cmView) return;
+        const doc = sec._cmView.state.doc;
+        const exts = _vimEnabled
+          ? [basicSetup, markdown(), closeBrackets(), vim(), EditorView.lineWrapping]
+          : [basicSetup, markdown(), closeBrackets(), EditorView.lineWrapping];
+        sec._cmView.setState(EditorState.create({ doc, extensions: exts }));
+      });
+    })();
+  }
+
+  function toggleLineNumbers(btn) {
+    _lineNumsEnabled = !_lineNumsEnabled;
+    btn.classList.toggle('wl-fmt-btn-active', _lineNumsEnabled);
+    const modal = btn.closest('.wl-float-modal');
+    if (!modal) return;
+    (async () => {
+      const { EditorView, EditorState, basicSetup, markdown, closeBrackets, lineNumbers, vim } = await waitForCM6();
+      modal.querySelectorAll('.wl-section-editor').forEach(sec => {
+        if (!sec._cmView) return;
+        const doc = sec._cmView.state.doc;
+        const exts = [basicSetup, markdown(), closeBrackets(), EditorView.lineWrapping,
+          ...(_lineNumsEnabled ? [lineNumbers()] : []),
+          ...(_vimEnabled ? [vim()] : [])];
+        sec._cmView.setState(EditorState.create({ doc, extensions: exts }));
+      });
+    })();
+  }
+
+  function togglePreview(btn, sectionDiv) {
+    if (!sectionDiv) {
+      // No specific section — toggle all in modal
+      const modal = btn.closest('.wl-float-modal');
+      modal?.querySelectorAll('.wl-section-editor').forEach(sec => _toggleSectionPreview(sec, btn));
+      return;
+    }
+    _toggleSectionPreview(sectionDiv, btn);
+  }
+
+  function _toggleSectionPreview(sectionDiv, btn) {
+    const wrap = sectionDiv.querySelector('.wl-cm-wrap');
+    let preview = sectionDiv.querySelector('.wl-cm-preview');
+    if (preview) {
+      // Back to editor
+      preview.remove();
+      if (wrap) wrap.style.display = '';
+      sectionDiv._cmPreviewActive = false;
+      if (btn) btn.classList.remove('wl-fmt-btn-active');
+    } else {
+      // Show rendered preview
+      const view = sectionDiv._cmView;
+      const src = view ? view.state.doc.toString() : (sectionDiv._cmLastSource || '');
+      sectionDiv._cmLastSource = src;
+      if (wrap) wrap.style.display = 'none';
+      preview = document.createElement('div');
+      preview.className = 'wl-cm-preview wl-view-section-body';
+      preview.innerHTML = typeof marked !== 'undefined' ? marked.parse(src) : `<pre>${escHtml(src)}</pre>`;
+      sectionDiv.appendChild(preview);
+      sectionDiv._cmPreviewActive = true;
+      if (btn) btn.classList.add('wl-fmt-btn-active');
+    }
+  }
+
+  function insertTable() {
+    insertMdAtCursor('| Col 1 | Col 2 | Col 3 |\n|-------|-------|-------|\n|       |       |       |\n', '');
+  }
+
   [
-    { label: '<b>B</b>',  title: 'Bold (**text**)',            action: () => insertMdAtCursor('**', '**') },
-    { label: '<i>I</i>',  title: 'Italic (*text*)',             action: () => insertMdAtCursor('*', '*') },
-    { label: '<u>U</u>',  title: 'Underline (<u>text</u>)',     action: () => insertMdAtCursor('<u>', '</u>') },
-    { label: '`·`',       title: 'Inline code (`code`)',        action: () => insertMdAtCursor('`', '`') },
+    { label: '<b>B</b>',  title: 'Bold (**text**)',              action: () => insertMdAtCursor('**', '**') },
+    { label: '<i>I</i>',  title: 'Italic (*text*)',               action: () => insertMdAtCursor('*', '*') },
+    { label: '<u>U</u>',  title: 'Underline (<u>text</u>)',       action: () => insertMdAtCursor('<u>', '</u>') },
+    { label: '`·`',       title: 'Inline code (`code`)',          action: () => insertMdAtCursor('`', '`') },
+    { label: '==',        title: 'Highlight (==text==)',          action: () => insertMdAtCursor('==', '==') },
     { label: '—' },
-    { label: 'H1', title: 'Heading 1 (# at line start)',        action: () => insertMdAtCursor('# ', '') },
-    { label: 'H2', title: 'Heading 2 (## at line start)',       action: () => insertMdAtCursor('## ', '') },
-    { label: 'H3', title: 'Heading 3 (### at line start)',      action: () => insertMdAtCursor('### ', '') },
+    { label: 'H1', title: 'Heading 1 (# )',    action: () => insertMdAtCursor('# ', '') },
+    { label: 'H2', title: 'Heading 2 (## )',   action: () => insertMdAtCursor('## ', '') },
+    { label: 'H3', title: 'Heading 3 (### )',  action: () => insertMdAtCursor('### ', '') },
     { label: '—' },
-    { label: '•',  title: 'Bullet list item (- )',               action: () => insertMdAtCursor('- ', '') },
-    { label: '1.', title: 'Numbered list item (1. )',             action: () => insertMdAtCursor('1. ', '') },
-    { label: '>',  title: 'Blockquote (> )',                      action: () => insertMdAtCursor('> ', '') },
+    { label: '•',   title: 'Bullet list (- )',           action: () => insertMdAtCursor('- ', '') },
+    { label: '1.',  title: 'Numbered list (1. )',         action: () => insertMdAtCursor('1. ', '') },
+    { label: '>',   title: 'Blockquote (> )',             action: () => insertMdAtCursor('> ', '') },
     { label: '—' },
-    { label: '☑',  title: 'Todo checkbox (- [ ] task)',           action: () => insertMdAtCursor('- [ ] ', '') },
-    { label: 'HR', title: 'Horizontal separator (---)',            action: () => insertMdAtCursor('\n---\n', '') },
-    { label: '[⇗]', title: 'Link ([text](url))',                  action: () => insertMdAtCursor('[', '](url)') },
+    { label: '☑',   title: 'Todo checkbox (- [ ] )',      action: () => insertMdAtCursor('- [ ] ', '') },
+    { label: 'HR',  title: 'Horizontal rule (---)',        action: () => insertMdAtCursor('\n---\n', '') },
+    { label: '[⇗]', title: 'Link ([text](url))',           action: () => insertMdAtCursor('[', '](url)') },
     { label: '—' },
-    { label: 'SQL',  title: 'SQL code block (```sql...```)',      action: () => insertMdAtCursor('```sql\n', '\n```') },
-    { label: 'JSON', title: 'JSON code block (```json...```)',    action: () => insertMdAtCursor('```json\n', '\n```') },
-    { label: '</>',  title: 'Generic code block (```...```)',     action: () => insertMdAtCursor('```\n', '\n```') },
+    { label: 'SQL',  title: 'SQL code block',  action: () => insertMdAtCursor('```sql\n', '\n```') },
+    { label: 'JSON', title: 'JSON code block', action: () => insertMdAtCursor('```json\n', '\n```') },
+    { label: '</>',  title: 'Code block',      action: () => insertMdAtCursor('```\n', '\n```') },
+    { label: '⊞',   title: 'Insert table',    action: () => insertTable() },
+    { label: '—' },
+    { label: '👁',   title: 'Toggle preview (render markdown)', special: 'preview' },
+    { label: '#¶',   title: 'Toggle line numbers',              special: 'linenum' },
+    { label: 'Vim',  title: 'Toggle Vim keybindings',           special: 'vim' },
   ].forEach(item => {
     if (item.label === '—') { const sep = document.createElement('span'); sep.className = 'wl-fmt-sep'; formatBar.appendChild(sep); return; }
     const btn = document.createElement('button');
@@ -5363,7 +5395,15 @@ function buildWLFormatBar() {
     if (['SQL', 'JSON', '</>'].includes(item.label)) btn.classList.add('wl-fmt-btn-code');
     btn.innerHTML = item.label;
     btn.title = item.title;
-    btn.addEventListener('mousedown', e => { e.preventDefault(); item.action(); });
+    if (item.special === 'vim') {
+      btn.addEventListener('mousedown', e => { e.preventDefault(); toggleVim(btn); });
+    } else if (item.special === 'linenum') {
+      btn.addEventListener('mousedown', e => { e.preventDefault(); toggleLineNumbers(btn); });
+    } else if (item.special === 'preview') {
+      btn.addEventListener('mousedown', e => { e.preventDefault(); togglePreview(btn, null); });
+    } else {
+      btn.addEventListener('mousedown', e => { e.preventDefault(); item.action(); });
+    }
     formatBar.appendChild(btn);
   });
   return formatBar;
