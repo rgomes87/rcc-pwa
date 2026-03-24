@@ -9457,10 +9457,75 @@ document.getElementById('calViewMonth').addEventListener('click', () => {
   saveCalState(); renderCalendar();
 });
 
+// ── Archive Panel ──────────────────────────────────────────────────────────────
+
+function renderArchivePanel() {
+  const panel = document.getElementById('archivePanel');
+  if (!panel) return;
+  panel.innerHTML = '';
+
+  const hubs = [
+    { label: 'Clinical', entries: clinicalEntries, save: saveClinicalEntries, render: renderClinicalHub, open: id => openClinicalEntryViewModal(id) },
+    { label: 'Cogito', entries: cogitoEntries, save: saveCogitoEntries, render: renderCogitoHub, open: id => openCogitoEntryViewModal(id) },
+    { label: 'Req & Proc', entries: reqprocEntries, save: saveReqprocEntries, render: renderReqprocHub, open: id => openReqprocEntryViewModal(id) },
+    { label: 'Trust Analytics', entries: trustanalyticsEntries, save: saveTrustanalyticsEntries, render: renderTrustanalyticsHub, open: id => openTrustanalyticsEntryViewModal(id) },
+    { label: 'Work Log', entries: wlItems, save: saveWL, render: renderWL, open: id => openWLViewModal(id) },
+    { label: 'Snippets', entries: snipItems, save: saveSnippets, render: renderSnippetsHub, open: null },
+    { label: 'Guides', entries: guideItems, save: saveGuides, render: renderGuidesHub, open: null },
+  ];
+
+  let hasAny = false;
+  hubs.forEach(hub => {
+    const archived = (hub.entries || []).filter(e => e.archived);
+    if (!archived.length) return;
+    hasAny = true;
+
+    const section = document.createElement('div');
+    section.className = 'archive-hub-section';
+    const heading = document.createElement('div');
+    heading.className = 'archive-hub-heading';
+    heading.textContent = hub.label;
+    section.appendChild(heading);
+
+    archived.forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'archive-entry-row';
+      const titleEl = document.createElement('span');
+      titleEl.className = 'archive-entry-title';
+      titleEl.textContent = entry.title || '(untitled)';
+      const meta = document.createElement('span');
+      meta.className = 'archive-entry-meta';
+      meta.textContent = entry.archivedAt ? 'Archived ' + wlFmtTs(entry.archivedAt) : '';
+      const restoreBtn = document.createElement('button');
+      restoreBtn.className = 'tool-btn';
+      restoreBtn.textContent = 'Restore';
+      restoreBtn.addEventListener('click', async () => {
+        entry.archived = false;
+        delete entry.archivedAt;
+        await hub.save(hub.entries);
+        hub.render();
+        renderArchivePanel();
+        showToast('Restored.');
+      });
+      row.append(titleEl, meta, restoreBtn);
+      section.appendChild(row);
+    });
+    panel.appendChild(section);
+  });
+
+  if (!hasAny) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.style.padding = '3rem 1.5rem';
+    empty.innerHTML = 'No archived entries yet.<br><span style="font-size:12px;color:var(--text-faint)">Archive entries from their edit modals using the Archive button.</span>';
+    panel.appendChild(empty);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 function switchTab(tab) {
-  ['Todos','Worklog','References','Dashboard','Calendar'].forEach(t => {
+  ['Todos','Worklog','References','Dashboard','Calendar','Archive'].forEach(t => {
     document.getElementById('panel' + t).classList.toggle('active', t === tab);
     document.getElementById('tab' + t).classList.toggle('active', t === tab);
   });
@@ -9475,6 +9540,7 @@ function switchTab(tab) {
   }
   if (tab === 'Dashboard')  requestAnimationFrame(renderDashboard);
   if (tab === 'Calendar')   renderCalendar();
+  if (tab === 'Archive')    renderArchivePanel();
   localStorage.setItem('rcc_active_tab', tab);
 }
 
@@ -9484,6 +9550,7 @@ document.getElementById('tabWorklog').addEventListener('click',    () => switchT
 document.getElementById('tabReferences').addEventListener('click', () => switchTab('References'));
 document.getElementById('tabDashboard').addEventListener('click',  () => switchTab('Dashboard'));
 document.getElementById('tabCalendar').addEventListener('click',   () => switchTab('Calendar'));
+document.getElementById('tabArchive').addEventListener('click',    () => switchTab('Archive'));
 
 // Wire hub sub-tabs
 document.querySelectorAll('.hub-tab-btn').forEach(btn =>

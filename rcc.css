@@ -3636,6 +3636,14 @@ html.theme-inverted .snip-src-both      { background: #064e3b; color: #6ee7b7; }
 /* ── Calendar Tab ─────────────────────────────────────────────── */
 #panelCalendar { display: none; flex-direction: column; overflow: hidden; }
 #panelCalendar.active { display: flex; height: calc(100vh - var(--header-h)); }
+/* ── Archive Panel ── */
+.archive-panel-inner { max-width: 800px; margin: 0 auto; padding: 1.5rem; overflow-y: auto; }
+.archive-hub-section { margin-bottom: 2rem; }
+.archive-hub-heading { font-family: var(--font-mono); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.5rem; padding-bottom: 4px; border-bottom: 1px solid var(--border-light); }
+.archive-entry-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
+.archive-entry-title { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.archive-entry-meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); white-space: nowrap; }
+
 .cal-panel-inner { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .cal-week-outer  { flex: 1; overflow-y: auto; }
 .cal-month-outer { flex: 1; overflow-y: auto; }

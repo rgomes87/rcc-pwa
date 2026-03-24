@@ -1,4 +1,4 @@
-const CACHE = 'rcc-v114';
+const CACHE = 'rcc-v115';
 const SHELL = [
   '/',
   '/rcc.css',
