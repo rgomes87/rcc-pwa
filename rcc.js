@@ -2366,7 +2366,7 @@ function renderClinicalEntries() {
   toolbar.append(searchIn, countEl);
 
   // Tag filter pills
-  const areaEntries = clinicalEntries.filter(e => e.areaId === selectedClinicalAreaId);
+  const areaEntries = clinicalEntries.filter(e => e.areaId === selectedClinicalAreaId && !e.archived);
   const allTags = [...new Set(areaEntries.flatMap(e => e.tags || []))].sort();
   tagFilter.innerHTML = '';
   if (allTags.length) {
@@ -2558,9 +2558,15 @@ function createClinicalEntryModal(editId, areaId) {
   tagsInput.type = 'text';
   tagsInput.className = 'clinical-tags-input';
   tagsInput.placeholder = 'Add tag, press Enter…';
+  const tagsDL = document.createElement('datalist');
+  tagsDL.id = 'clinical-tags-dl-' + (editId || 'new');
+  getAllKnownTags().forEach(t => { const o = document.createElement('option'); o.value = t; tagsDL.appendChild(o); });
+  tagsInput.setAttribute('list', tagsDL.id);
+  tagsChips.appendChild(tagsDL);
 
   function renderTagChips() {
     tagsChips.innerHTML = '';
+    tagsChips.appendChild(tagsDL);
     entryTags.forEach((tag, i) => {
       const chip = document.createElement('span');
       chip.className = 'snip-tag-chip';
@@ -2594,6 +2600,7 @@ function createClinicalEntryModal(editId, areaId) {
   const formatBar = buildWLFormatBar();
   const sectionsEl = buildWLSectionsContainer(entry, null);
   const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
+  const linksSection = buildWLLinksSection(entry?.links);
   const editFooter = editId ? buildWLEditFooter({
     onDelete: async () => {
       clinicalEntries = clinicalEntries.filter(e => e.id !== editId);
@@ -2610,7 +2617,7 @@ function createClinicalEntryModal(editId, areaId) {
     },
   }) : null;
 
-  modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
+  modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer, linksSection);
   if (editFooter) modal.appendChild(editFooter);
   document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
@@ -2630,10 +2637,11 @@ function createClinicalEntryModal(editId, areaId) {
         existing.title = title;
         existing.tags = entryTags.slice();
         existing.sections = collectWLSections(sectionsEl);
+        existing.links = linksSection._getLinks();
         existing.updatedAt = now;
       }
     } else {
-      clinicalEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), createdAt: now, updatedAt: now });
+      clinicalEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), links: linksSection._getLinks(), createdAt: now, updatedAt: now });
     }
     await saveClinicalEntries(clinicalEntries);
     showToast('Entry saved.');
@@ -2840,7 +2848,7 @@ function renderCogitoEntries() {
   toolbar.append(searchIn, countEl);
 
   // Tag filter pills
-  const areaEntries = cogitoEntries.filter(e => e.areaId === selectedCogitoAreaId);
+  const areaEntries = cogitoEntries.filter(e => e.areaId === selectedCogitoAreaId && !e.archived);
   const allTags = [...new Set(areaEntries.flatMap(e => e.tags || []))].sort();
   tagFilter.innerHTML = '';
   if (allTags.length) {
@@ -3032,9 +3040,15 @@ function createCogitoEntryModal(editId, areaId) {
   tagsInput.type = 'text';
   tagsInput.className = 'clinical-tags-input';
   tagsInput.placeholder = 'Add tag, press Enter…';
+  const tagsDL = document.createElement('datalist');
+  tagsDL.id = 'cogito-tags-dl-' + (editId || 'new');
+  getAllKnownTags().forEach(t => { const o = document.createElement('option'); o.value = t; tagsDL.appendChild(o); });
+  tagsInput.setAttribute('list', tagsDL.id);
+  tagsChips.appendChild(tagsDL);
 
   function renderTagChips() {
     tagsChips.innerHTML = '';
+    tagsChips.appendChild(tagsDL);
     entryTags.forEach((tag, i) => {
       const chip = document.createElement('span');
       chip.className = 'snip-tag-chip';
@@ -3068,6 +3082,7 @@ function createCogitoEntryModal(editId, areaId) {
   const formatBar = buildWLFormatBar();
   const sectionsEl = buildWLSectionsContainer(entry, null);
   const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
+  const linksSection = buildWLLinksSection(entry?.links);
   const editFooter = editId ? buildWLEditFooter({
     onDelete: async () => {
       cogitoEntries = cogitoEntries.filter(e => e.id !== editId);
@@ -3084,7 +3099,7 @@ function createCogitoEntryModal(editId, areaId) {
     },
   }) : null;
 
-  modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
+  modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer, linksSection);
   if (editFooter) modal.appendChild(editFooter);
   document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
@@ -3100,9 +3115,9 @@ function createCogitoEntryModal(editId, areaId) {
     const now = new Date().toISOString();
     if (editId) {
       const existing = cogitoEntries.find(e => e.id === editId);
-      if (existing) { existing.title = title; existing.tags = entryTags.slice(); existing.sections = collectWLSections(sectionsEl); existing.updatedAt = now; }
+      if (existing) { existing.title = title; existing.tags = entryTags.slice(); existing.sections = collectWLSections(sectionsEl); existing.links = linksSection._getLinks(); existing.updatedAt = now; }
     } else {
-      cogitoEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), createdAt: now, updatedAt: now });
+      cogitoEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), links: linksSection._getLinks(), createdAt: now, updatedAt: now });
     }
     await saveCogitoEntries(cogitoEntries);
     showToast('Entry saved.');
@@ -3301,7 +3316,7 @@ function renderReqprocEntries() {
   const countEl = document.createElement('span');
   countEl.style.cssText = 'font-family:var(--font-mono);font-size:11px;color:var(--text-faint);white-space:nowrap;margin-left:auto;';
   toolbar.append(searchIn, countEl);
-  const areaEntries = reqprocEntries.filter(e => e.areaId === selectedReqprocAreaId);
+  const areaEntries = reqprocEntries.filter(e => e.areaId === selectedReqprocAreaId && !e.archived);
   const allTags = [...new Set(areaEntries.flatMap(e => e.tags || []))].sort();
   tagFilter.innerHTML = '';
   if (allTags.length) {
@@ -3445,8 +3460,14 @@ function createReqprocEntryModal(editId, areaId) {
   const tagsChips = document.createElement('div'); tagsChips.className = 'clinical-tags-chips';
   let entryTags = entry ? [...(entry.tags || [])] : [];
   const tagsInput = document.createElement('input'); tagsInput.type = 'text'; tagsInput.className = 'clinical-tags-input'; tagsInput.placeholder = 'Add tag, press Enter…';
+  const tagsDL = document.createElement('datalist');
+  tagsDL.id = 'reqproc-tags-dl-' + (editId || 'new');
+  getAllKnownTags().forEach(t => { const o = document.createElement('option'); o.value = t; tagsDL.appendChild(o); });
+  tagsInput.setAttribute('list', tagsDL.id);
+  tagsChips.appendChild(tagsDL);
   function renderTagChips() {
     tagsChips.innerHTML = '';
+    tagsChips.appendChild(tagsDL);
     entryTags.forEach((tag, i) => {
       const chip = document.createElement('span'); chip.className = 'snip-tag-chip';
       chip.innerHTML = `${escHtml(tag)}<button class="icon-btn del" style="font-size:9px;padding:0 2px" title="Remove">&#x2715;</button>`;
@@ -3475,6 +3496,7 @@ function createReqprocEntryModal(editId, areaId) {
   const formatBar = buildWLFormatBar();
   const sectionsEl = buildWLSectionsContainer(entry, null);
   const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
+  const linksSection = buildWLLinksSection(entry?.links);
   const editFooter = editId ? buildWLEditFooter({
     onDelete: async () => {
       reqprocEntries = reqprocEntries.filter(e => e.id !== editId);
@@ -3490,7 +3512,7 @@ function createReqprocEntryModal(editId, areaId) {
       closeModal();
     },
   }) : null;
-  modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
+  modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer, linksSection);
   if (editFooter) modal.appendChild(editFooter);
   document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
@@ -3503,9 +3525,9 @@ function createReqprocEntryModal(editId, areaId) {
     const now = new Date().toISOString();
     if (editId) {
       const existing = reqprocEntries.find(e => e.id === editId);
-      if (existing) { existing.title = title; existing.tags = entryTags.slice(); existing.sections = collectWLSections(sectionsEl); existing.updatedAt = now; }
+      if (existing) { existing.title = title; existing.tags = entryTags.slice(); existing.sections = collectWLSections(sectionsEl); existing.links = linksSection._getLinks(); existing.updatedAt = now; }
     } else {
-      reqprocEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), createdAt: now, updatedAt: now });
+      reqprocEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), links: linksSection._getLinks(), createdAt: now, updatedAt: now });
     }
     await saveReqprocEntries(reqprocEntries);
     showToast('Entry saved.');
@@ -3679,7 +3701,7 @@ function renderTrustanalyticsEntries() {
   const countEl = document.createElement('span');
   countEl.style.cssText = 'font-family:var(--font-mono);font-size:11px;color:var(--text-faint);white-space:nowrap;margin-left:auto;';
   toolbar.append(searchIn, countEl);
-  const areaEntries = trustanalyticsEntries.filter(e => e.areaId === selectedTrustanalyticsAreaId);
+  const areaEntries = trustanalyticsEntries.filter(e => e.areaId === selectedTrustanalyticsAreaId && !e.archived);
   const allTags = [...new Set(areaEntries.flatMap(e => e.tags || []))].sort();
   tagFilter.innerHTML = '';
   if (allTags.length) {
@@ -3788,8 +3810,14 @@ function createTrustanalyticsEntryModal(editId, areaId) {
   const tagsChips = document.createElement('div'); tagsChips.className = 'clinical-tags-chips';
   let entryTags = entry ? [...(entry.tags || [])] : [];
   const tagsInput = document.createElement('input'); tagsInput.type = 'text'; tagsInput.className = 'clinical-tags-input'; tagsInput.placeholder = 'Add tag, press Enter…';
+  const tagsDL = document.createElement('datalist');
+  tagsDL.id = 'trustanalytics-tags-dl-' + (editId || 'new');
+  getAllKnownTags().forEach(t => { const o = document.createElement('option'); o.value = t; tagsDL.appendChild(o); });
+  tagsInput.setAttribute('list', tagsDL.id);
+  tagsChips.appendChild(tagsDL);
   function renderTagChips() {
     tagsChips.innerHTML = '';
+    tagsChips.appendChild(tagsDL);
     entryTags.forEach((tag, i) => {
       const chip = document.createElement('span'); chip.className = 'snip-tag-chip';
       chip.innerHTML = `${escHtml(tag)}<button class="icon-btn del" style="font-size:9px;padding:0 2px" title="Remove">&#x2715;</button>`;
@@ -3809,6 +3837,7 @@ function createTrustanalyticsEntryModal(editId, areaId) {
   const formatBar = buildWLFormatBar();
   const sectionsEl = buildWLSectionsContainer(entry, null);
   const { bar: footer, addSectionBtn, saveBtn } = buildWLActionBar(false);
+  const linksSection = buildWLLinksSection(entry?.links);
   const editFooter = editId ? buildWLEditFooter({
     onDelete: async () => {
       trustanalyticsEntries = trustanalyticsEntries.filter(e => e.id !== editId);
@@ -3824,7 +3853,7 @@ function createTrustanalyticsEntryModal(editId, areaId) {
       closeModal();
     },
   }) : null;
-  modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer);
+  modal.append(dragBar, areaLabel, header, tagsRow, topBar, formatBar, sectionsEl, footer, linksSection);
   if (editFooter) modal.appendChild(editFooter);
   document.body.appendChild(modal); modal._openModal?.();
   titleIn.focus();
@@ -3837,9 +3866,9 @@ function createTrustanalyticsEntryModal(editId, areaId) {
     const now = new Date().toISOString();
     if (editId) {
       const existing = trustanalyticsEntries.find(e => e.id === editId);
-      if (existing) { existing.title = title; existing.tags = entryTags.slice(); existing.sections = collectWLSections(sectionsEl); existing.updatedAt = now; }
+      if (existing) { existing.title = title; existing.tags = entryTags.slice(); existing.sections = collectWLSections(sectionsEl); existing.links = linksSection._getLinks(); existing.updatedAt = now; }
     } else {
-      trustanalyticsEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), createdAt: now, updatedAt: now });
+      trustanalyticsEntries.unshift({ id: crypto.randomUUID(), areaId: effectiveAreaId, title, tags: entryTags.slice(), sections: collectWLSections(sectionsEl), links: linksSection._getLinks(), createdAt: now, updatedAt: now });
     }
     await saveTrustanalyticsEntries(trustanalyticsEntries);
     showToast('Entry saved.');
@@ -4066,6 +4095,7 @@ function renderWL() {
   const filterStatus = document.getElementById('wlFilterStatus').value;
 
   let filtered = wlItems.filter(item => {
+    if (item.archived) return false;
     if (!wlShowArchived && item.status === 'Archived') return false;
     if (filterType && item.type !== filterType) return false;
     if (filterStatus && item.status !== filterStatus) return false;
