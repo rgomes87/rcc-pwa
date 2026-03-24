@@ -5171,7 +5171,7 @@ function closeWLModal(modal) {
   hideModalBackdrop();
   if (typeof modal._escHandler === 'function') document.removeEventListener('keydown', modal._escHandler);
   if (typeof modal._dragCleanup === 'function') modal._dragCleanup();
-  setTimeout(() => modal.remove(), 240);
+  setTimeout(() => { modal.remove(); if (typeof modal._onClose === 'function') modal._onClose(); }, 240);
 }
 
 // ── WL Modal DOM builders ────────────────────────────────────────
@@ -7989,29 +7989,28 @@ function createContactModal(contactId = null) {
 
   function mkRow(labelText, input, alignTop = false) {
     const row = document.createElement('div');
-    row.className = 'form-row' + (alignTop ? ' align-top' : '');
+    row.className = 'snip-tags-row';
+    if (alignTop) row.style.alignItems = 'flex-start';
     const lbl = document.createElement('label');
-    lbl.className = 'form-label';
+    lbl.className = 'snip-tags-label';
+    lbl.style.cssText = 'width:60px;flex-shrink:0;text-align:right';
     lbl.textContent = labelText;
     row.append(lbl, input);
     return row;
   }
 
-  const nameIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'form-input', placeholder: 'Full name…',           value: item?.name  || '' });
-  const roleIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'form-input', placeholder: 'Role…',                 value: item?.role  || '' });
-  const teamIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'form-input', placeholder: 'Team…',                 value: item?.team  || '' });
-  const emailIn = Object.assign(document.createElement('input'),    { type: 'email', className: 'form-input', placeholder: 'Email (optional)…',     value: item?.email || '' });
-  const tagsIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'form-input', placeholder: 'Comma-separated tags…', value: (item?.tags || []).join(', ') });
-  const notesIn = Object.assign(document.createElement('textarea'), { className: 'form-textarea',             placeholder: 'Notes (markdown supported)…', value: item?.notes || '' });
+  const nameIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'wl-ticket-input', placeholder: 'Full name…',           value: item?.name  || '' });
+  const roleIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'wl-ticket-input', placeholder: 'Role…',                 value: item?.role  || '' });
+  const teamIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'wl-ticket-input', placeholder: 'Team…',                 value: item?.team  || '' });
+  const emailIn = Object.assign(document.createElement('input'),    { type: 'email', className: 'wl-ticket-input', placeholder: 'Email (optional)…',     value: item?.email || '' });
+  const tagsIn  = Object.assign(document.createElement('input'),    { type: 'text',  className: 'wl-ticket-input', placeholder: 'Comma-separated tags…', value: (item?.tags || []).join(', ') });
+  const notesIn = Object.assign(document.createElement('textarea'), { className: 'wl-ticket-input',                placeholder: 'Notes (markdown supported)…', value: item?.notes || '' });
+  notesIn.style.cssText = 'resize:vertical;min-height:64px;font-family:var(--font-mono);font-size:12px';
 
-  const group1 = document.createElement('div'); group1.className = 'form-group';
-  group1.append(mkRow('Name *', nameIn), mkRow('Role', roleIn), mkRow('Team', teamIn), mkRow('Email', emailIn));
-  const group2 = document.createElement('div'); group2.className = 'form-group';
-  group2.append(mkRow('Tags', tagsIn), mkRow('Notes', notesIn, true));
-
-  const body = document.createElement('div');
-  body.className = 'modal-body';
-  body.append(group1, group2);
+  const formBody = document.createElement('div');
+  formBody.style.cssText = 'overflow-y:auto;flex:1';
+  formBody.append(mkRow('Name *', nameIn), mkRow('Role', roleIn), mkRow('Team', teamIn),
+    mkRow('Email', emailIn), mkRow('Tags', tagsIn), mkRow('Notes', notesIn, true));
 
   const footer = document.createElement('div');
   footer.className = 'wl-modal-footer';
@@ -8020,7 +8019,7 @@ function createContactModal(contactId = null) {
   saveBtn.textContent = 'Save';
   footer.appendChild(saveBtn);
 
-  modal.append(dragBar, header, body, footer);
+  modal.append(dragBar, header, formBody, footer);
   document.body.appendChild(modal); modal._openModal?.();
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
@@ -8052,7 +8051,7 @@ function createContactModal(contactId = null) {
       });
     }
     saveContacts(contactItems);
-    renderContacts();
+    modal._onClose = renderContacts;
     showToast(item ? 'Contact saved.' : 'Contact added.');
     closeModal();
   }
@@ -8200,16 +8199,18 @@ function createDatabaseModal(editId = null) {
 
   function mkRow(labelText, input, alignTop = false) {
     const row = document.createElement('div');
-    row.className = 'form-row' + (alignTop ? ' align-top' : '');
+    row.className = 'snip-tags-row';
+    if (alignTop) row.style.alignItems = 'flex-start';
     const lbl = document.createElement('label');
-    lbl.className = 'form-label';
+    lbl.className = 'snip-tags-label';
+    lbl.style.cssText = 'width:72px;flex-shrink:0;text-align:right';
     lbl.textContent = labelText;
     row.append(lbl, input);
     return row;
   }
   function mkSelect(id, options, val) {
     const sel = document.createElement('select');
-    sel.id = id; sel.className = 'form-select';
+    sel.id = id; sel.className = 'wl-filter'; sel.style.flex = '1';
     options.forEach(o => {
       const opt = document.createElement('option');
       opt.value = o; opt.textContent = o;
@@ -8220,7 +8221,7 @@ function createDatabaseModal(editId = null) {
   }
   function mkText(id, placeholder, val) {
     const inp = document.createElement('input');
-    inp.type = 'text'; inp.id = id; inp.className = 'form-input';
+    inp.type = 'text'; inp.id = id; inp.className = 'wl-ticket-input';
     inp.placeholder = placeholder; inp.value = val || '';
     return inp;
   }
@@ -8231,8 +8232,9 @@ function createDatabaseModal(editId = null) {
   const jumpIn   = mkText('dbJumpIn',   'e.g. atos-jump.gstt.nhs.uk', item?.jumpServer);
   const serverIn = mkText('dbServerIn', 'DB server / host name',      item?.dbServer);
   const portIn   = mkText('dbPortIn',   'Port (optional, e.g. 1433)', item?.port);
-  const notesIn  = Object.assign(document.createElement('textarea'), { className: 'form-textarea', value: item?.notes || '' });
+  const notesIn  = Object.assign(document.createElement('textarea'), { className: 'wl-ticket-input', value: item?.notes || '' });
   notesIn.placeholder = 'Credentials location, quirks…';
+  notesIn.style.cssText = 'resize:vertical;min-height:72px;font-family:var(--font-mono);font-size:12px';
 
   const orgPills = document.createElement('div');
   orgPills.className = 'db-org-pills-input';
@@ -8245,16 +8247,14 @@ function createDatabaseModal(editId = null) {
     orgPills.appendChild(btn);
   });
 
-  const group1 = document.createElement('div'); group1.className = 'form-group';
-  group1.append(mkRow('Type', typeIn), mkRow('Org(s)', orgPills), mkRow('Env', envIn), mkRow('Access', accessIn));
-  const group2 = document.createElement('div'); group2.className = 'form-group';
-  group2.append(mkRow('Jump', jumpIn), mkRow('Server', serverIn), mkRow('Port', portIn));
-  const group3 = document.createElement('div'); group3.className = 'form-group';
-  group3.append(mkRow('Notes', notesIn, true));
-
-  const body = document.createElement('div');
-  body.className = 'modal-body';
-  body.append(group1, group2, group3);
+  const formBody = document.createElement('div');
+  formBody.style.cssText = 'overflow-y:auto;flex:1';
+  formBody.append(
+    mkRow('Type', typeIn), mkRow('Org(s)', orgPills),
+    mkRow('Env', envIn), mkRow('Access', accessIn),
+    mkRow('Jump', jumpIn), mkRow('Server', serverIn),
+    mkRow('Port', portIn), mkRow('Notes', notesIn, true)
+  );
 
   const footer = document.createElement('div');
   footer.className = 'wl-modal-footer';
@@ -8263,7 +8263,7 @@ function createDatabaseModal(editId = null) {
   saveBtn.textContent = item ? 'Save changes' : 'Add entry';
   footer.appendChild(saveBtn);
 
-  modal.append(dragBar, header, body, footer);
+  modal.append(dragBar, header, formBody, footer);
   document.body.appendChild(modal); modal._openModal?.();
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
@@ -8298,7 +8298,7 @@ function createDatabaseModal(editId = null) {
       dbAccessItems.unshift({ id: crypto.randomUUID(), ...data, areaId: newDbAreaId, createdAt: now, updatedAt: now });
     }
     saveDbAccess(dbAccessItems);
-    renderDatabasesHub();
+    modal._onClose = renderDatabasesHub;
     showToast(item ? 'Entry saved.' : 'Entry added.');
     closeModal();
   });
@@ -8706,23 +8706,23 @@ function createSnipModal(editId) {
   closeBtn.innerHTML = '&#x2715;';
   header.append(titleIn, sourceSelect, closeBtn);
 
-  // Metadata grouped fields
+  // Metadata rows
   const granListId = 'snipGranList_' + Date.now();
-  const tagsIn = Object.assign(document.createElement('input'), { type: 'text', className: 'form-input', placeholder: 'e.g. encounter, wl, inpatient', value: item ? (item.tags || []).join(', ') : '' });
-  const rootIn = Object.assign(document.createElement('input'), { type: 'text', className: 'form-input', placeholder: 'e.g. DIM_Patient, F_Encounter',  value: item ? (item.rootTable   || '') : '' });
-  const granIn = Object.assign(document.createElement('input'), { type: 'text', className: 'form-input', placeholder: 'e.g. one row per encounter',      value: item ? (item.granularity || '') : '' });
+  const tagsIn = Object.assign(document.createElement('input'), { type: 'text', className: 'wl-ticket-input', placeholder: 'e.g. encounter, wl, inpatient', value: item ? (item.tags || []).join(', ') : '' });
+  const rootIn = Object.assign(document.createElement('input'), { type: 'text', className: 'wl-ticket-input', placeholder: 'e.g. DIM_Patient, F_Encounter',  value: item ? (item.rootTable   || '') : '' });
+  const granIn = Object.assign(document.createElement('input'), { type: 'text', className: 'wl-ticket-input', placeholder: 'e.g. one row per encounter',      value: item ? (item.granularity || '') : '' });
   granIn.setAttribute('list', granListId);
   const granList = document.createElement('datalist');
   granList.id = granListId;
   loadGranularities().forEach(g => { const opt = document.createElement('option'); opt.value = g; granList.appendChild(opt); });
 
   function mkMetaRow(labelText, input) {
-    const row = document.createElement('div'); row.className = 'form-row';
-    const lbl = document.createElement('label'); lbl.className = 'form-label'; lbl.textContent = labelText;
+    const row = document.createElement('div'); row.className = 'snip-tags-row';
+    const lbl = document.createElement('label'); lbl.className = 'snip-tags-label'; lbl.style.cssText = 'width:80px;flex-shrink:0;text-align:right'; lbl.textContent = labelText;
     row.append(lbl, input);
     return row;
   }
-  const metaGroup = document.createElement('div'); metaGroup.className = 'form-group';
+  const metaGroup = document.createElement('div');
   metaGroup.append(mkMetaRow('Tags', tagsIn), mkMetaRow('Root table', rootIn), mkMetaRow('Granularity', granIn), granList);
 
   const queryWrap = document.createElement('div');
@@ -8763,7 +8763,7 @@ function createSnipModal(editId) {
   footer.appendChild(saveBtn);
 
   const body = document.createElement('div');
-  body.className = 'modal-body';
+  body.style.cssText = 'overflow-y:auto;flex:1;min-height:0';
   body.append(metaGroup, queryWrap, notesWrap);
 
   modal.append(dragBar, header, body, footer);
@@ -8798,8 +8798,8 @@ function createSnipModal(editId) {
       snipItems.unshift({ id: crypto.randomUUID(), title, source: sourceSelect.value, tags, rootTable, granularity, query: queryArea.value, notes: notesArea.value, areaId: newSnipAreaId, createdAt: now, updatedAt: now });
     }
     saveSnippets(snipItems);
-    renderSnippetsHub();
     showToast('Snippet saved.');
+    modal._onClose = renderSnippetsHub;
     closeModal();
   }
   saveBtn.addEventListener('click', doSave);
@@ -9495,7 +9495,7 @@ function _makeAddAreaBtn(btnId, rowId, areasArr, saveAreasFunc, selectFunc) {
       areasArr.push(area); saveAreasFunc(areasArr); done(); selectFunc(area.id);
     });
     cancelBtn.addEventListener('click', done);
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') okBtn.click(); if (e.key === 'Escape') done(); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); okBtn.click(); } if (e.key === 'Escape') done(); });
     rowBtns.append(okBtn, cancelBtn); row.append(inp, rowBtns);
     btn.parentNode.insertBefore(row, btn); inp.focus();
   });
