@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rui's Command Centre</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="manifest" href="manifest.json">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,500;1,300&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Mona+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="rcc.css?v=3">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+</head>
+
+<body>
+
+  <header>
+    <div class="header-logo">
+      <svg class="header-logo-icon" width="34" height="34" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="var(--accent)" />
+        <polyline points="5,10 13,16 5,22" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"
+          stroke-linejoin="round" />
+        <line x1="15" y1="22" x2="27" y2="22" stroke="rgba(255,255,255,0.55)" stroke-width="2.5"
+          stroke-linecap="round" />
+        <line x1="15" y1="22" x2="15" y2="22" stroke="#fff" stroke-width="2.8" stroke-linecap="round"
+          class="logo-cursor" />
+      </svg>
+      <div class="header-logo-wordmark">
+        <span class="header-logo-abbr">RCC<svg class="header-ecg" viewBox="0 0 110 20" preserveAspectRatio="none"
+            aria-hidden="true">
+            <path class="ecg-trace"
+              d="M0,10 L18,10 C20,10 21,8 22,10 L32,10 L33.5,11 L37,1 L40.5,18 L42,10 C46,5 50,5 54,10 L110,10"
+              fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          </svg></span>
+        <span class="header-logo-full">Rui's Command Centre</span>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabDashboard">Dashboard</button>
+      <button class="tab-btn" id="tabTodos">Todos</button>
+      <button class="tab-btn" id="tabWorklog">Documentation</button>
+      <button class="tab-btn" id="tabReferences">Knowledge Hub</button>
+      <button class="tab-btn" id="tabCalendar">Calendar</button>
+    </div>
+    <div class="header-nav-row">
+      <div class="week-nav" id="weekNav" style="display:none">
+        <button class="nav-btn" id="prevWeek" title="Previous week">&#8592; <span class="week-task-count"
+            id="prevWeekCount"></span></button>
+        <span class="week-label" id="weekLabel"></span>
+        <button class="nav-btn" id="nextWeek" title="Next week"><span class="week-task-count" id="nextWeekCount"></span>
+          &#8594;</button>
+        <button class="nav-btn" id="todayBtn" title="Jump to current week"
+          style="font-size:11px;width:auto;padding:0 8px;font-family:var(--font-mono)">today</button>
+        <button class="new-week-btn" id="newWeekBtn">+ New week</button>
+      </div>
+      <div class="week-nav" id="wlNav" style="display:none">
+        <button class="new-week-btn" id="wlNewItemBtn">+ New item</button>
+      </div>
+      <div class="week-nav" id="referencesNav" style="display:none">
+        <button class="new-week-btn" id="linksAddBtn">+ Add link</button>
+        <button class="new-week-btn" id="contactsAddBtn" style="display:none">+ Add contact</button>
+        <button class="new-week-btn" id="snipAddBtn" style="display:none">+ New snippet</button>
+        <button class="new-week-btn" id="guidesAddBtn" style="display:none">+ New guide</button>
+        <button class="new-week-btn" id="guidesAddEntryBtn" style="display:none">+ New guide</button>
+        <button class="new-week-btn" id="snippetsAddEntryBtn" style="display:none">+ New snippet</button>
+        <button class="new-week-btn" id="databasesAddEntryBtn" style="display:none">+ Add entry</button>
+        <button class="new-week-btn" id="clinicalAddEntryBtn" style="display:none">+ New entry</button>
+        <button class="new-week-btn" id="cogitoAddEntryBtn" style="display:none">+ New entry</button>
+        <button class="new-week-btn" id="reqprocAddEntryBtn" style="display:none">+ New entry</button>
+        <button class="new-week-btn" id="trustanalyticsAddEntryBtn" style="display:none">+ New entry</button>
+      </div>
+      <div class="week-nav" id="calNav" style="display:none">
+        <button class="nav-btn" id="calPrev">&#8592;</button>
+        <span class="week-label" id="calLabel"></span>
+        <button class="nav-btn" id="calNext">&#8594;</button>
+        <button class="nav-btn" id="calToday"
+          style="font-size:11px;width:auto;padding:0 8px;font-family:var(--font-mono)">today</button>
+        <div class="cal-view-pills">
+          <button class="cal-view-btn active" id="calViewWeek">Week</button>
+          <button class="cal-view-btn" id="calViewMonth">Month</button>
+        </div>
+      </div>
+    </div>
+    <div class="header-utils">
+      <button class="theme-btn" id="calBtn" title="Open Outlook Calendar">&#128197;</button>
+      <div style="position:relative">
+        <button class="theme-btn" id="themePickerBtn" title="Choose theme">
+          <span id="themePickerSwatch"
+            style="width:12px;height:12px;border-radius:50%;display:inline-block;background:var(--accent);flex-shrink:0"></span>
+        </button>
+        <div class="theme-picker-popup" id="themePicker"></div>
+      </div>
+      <div style="position:relative">
+        <button class="theme-btn" id="wrenchBtn" title="Data tools" style="font-size:15px">&#9881;</button>
+        <div class="wrench-popup" id="wrenchMenu">
+          <button class="wrench-item" id="backupBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>Backup data</button>
+          <button class="wrench-item" id="restoreBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>Restore data</button>
+          <div class="wrench-divider"></div>
+          <button class="wrench-item" id="autoBackupFolderBtn"><svg width="13" height="13" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>Auto-backup folder&hellip;</button>
+          <div id="autoBackupStatus" class="wrench-status"></div>
+          <button class="wrench-item" id="docFolderSettingsBtn"><svg width="13" height="13" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              <line x1="12" y1="11" x2="12" y2="17" />
+              <line x1="9" y1="14" x2="15" y2="14" />
+            </svg>Doc download folders&hellip;</button>
+          <div class="wrench-divider"></div>
+          <button class="wrench-item danger" id="clearAllBtn"><svg width="13" height="13" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6M14 11v6" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+            </svg>Clear all data</button>
+        </div>
+      </div>
+      <input type="file" id="restoreInput" accept=".json" style="display:none">
+    </div>
+  </header>
+
+  <div class="tab-panel" id="panelTodos">
+    <div class="todos-search-toolbar">
+      <div class="todos-toolbar-inner">
+        <div class="search-bar">
+          <span class="search-icon">&#9906;</span>
+          <input type="text" id="searchInput" placeholder="Search tasks &amp; reminders…">
+          <button class="search-clear" id="searchClear">&#x2715;</button>
+        </div>
+        <button class="today-filter-btn" id="todayFilterBtn">&#9788; Today</button>
+        <select id="filterPriority" class="toolbar-select">
+          <option value="">All priorities</option>
+          <option value="High">High</option>
+          <option value="Med">Med</option>
+          <option value="Low">Low</option>
+        </select>
+        <select id="sortBy" class="toolbar-select">
+          <option value="default">Sort: default</option>
+          <option value="priority">Sort: priority</option>
+          <option value="due">Sort: due date</option>
+          <option value="name">Sort: name</option>
+        </select>
+      </div>
+    </div>
+    <main>
+      <div class="reminders-panel">
+        <div class="section-header collapsible" data-section="reminders">
+          <span class="section-title">Reminders</span>
+          <button class="section-add-btn" id="addReminderOpenBtn" title="Add reminder">+</button>
+          <span class="section-count" id="reminderCount">0</span>
+          <span id="reminderDotDue" class="reminder-urgency-badge reminder-urgency-due" style="display:none"></span>
+          <span id="reminderDotSoon" class="reminder-urgency-badge reminder-urgency-soon" style="display:none"></span>
+          <span class="section-tail">
+            <button class="section-toggle-done" id="toggleDoneReminders" title="Show completed"
+              style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg></button>
+            <span class="section-chevron">&#9660;</span>
+          </span>
+        </div>
+        <div id="remindersBody">
+          <div id="reminderList"></div>
+          <div class="empty-state" id="reminderEmpty">No reminders set.</div>
+        </div>
+        <div class="add-reminder-row" id="addReminderRow" style="display:none">
+          <input type="text" id="remText" placeholder="Reminder…">
+          <input type="date" id="remDate">
+          <input type="time" id="remTime">
+          <select id="remPriority" class="toolbar-select">
+            <option value="">No priority</option>
+            <option value="High">High</option>
+            <option value="Med">Med</option>
+            <option value="Low">Low</option>
+          </select>
+          <select id="remWlLink">
+            <option value="">— WL link —</option>
+          </select>
+          <button class="add-confirm-btn" id="addReminderBtn">add</button>
+          <button class="icon-btn" id="addReminderCloseBtn" title="Cancel">&#x2715;</button>
+        </div>
+      </div>
+
+      <div class="week-stale-banner" id="weekStaleBanner">
+        <span id="weekStaleBannerMsg"></span>
+        <button id="weekStaleBannerBtn">Go to current week</button>
+      </div>
+      <div class="overdue-rollup" id="overdueRollup">
+        <span id="overdueRollupMsg"></span>
+        <button id="overdueCarryBtn">Carry over now</button>
+      </div>
+      <div class="stats-bar">
+        <div class="stat"><span id="statOpen">0</span>open</div>
+        <div class="stat"><span id="statDone">0</span>done</div>
+        <div class="stat"><span id="statCarried">0</span>carried over</div>
+      </div>
+
+      <section id="thisWeekSection">
+        <div class="section-header collapsible" data-section="thisweek">
+          <span class="section-title">This week</span>
+          <button class="section-add-btn" id="addTaskOpenBtn" title="Add task">+</button>
+          <span class="section-count" id="newCount">0</span>
+          <span id="taskDotDue" class="reminder-urgency-badge reminder-urgency-due" style="display:none"></span>
+          <span id="taskDotSoon" class="reminder-urgency-badge reminder-urgency-soon" style="display:none"></span>
+          <span class="section-tail">
+            <button class="section-toggle-done" id="toggleDoneTasks" title="Show completed" style="display:none"><svg
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg></button>
+            <span class="section-chevron">&#9660;</span>
+          </span>
+        </div>
+        <div id="thisWeekBody">
+          <div class="task-list" id="newList"></div>
+        </div>
+        <div class="add-task-row" id="addRow" style="display:none">
+          <input type="text" id="newTaskName" placeholder="Task name…" />
+          <button class="add-confirm-btn" id="addTaskBtn">add</button>
+          <select id="newTaskPriority" class="add-prio-Med">
+            <option value="Med">Med</option>
+            <option value="High">High</option>
+            <option value="Low">Low</option>
+          </select>
+          <span class="add-date-wrap" title="Start date">
+            <span class="date-label">start</span>
+            <input type="date" id="newTaskBuild" />
+          </span>
+          <select id="newTaskTime" title="Time slot"
+            style="font-family:var(--font-mono);font-size:10px;background:none;border:none;outline:none;color:var(--accent-muted);cursor:pointer;padding:0;max-width:52px">
+            <option value="00:00">00:00</option>
+          </select>
+          <span class="add-date-wrap" title="Due date">
+            <span class="date-label due-label">due</span>
+            <input type="date" id="newTaskDue" />
+          </span>
+          <button class="icon-btn" id="addTaskCloseBtn" title="Cancel">&#x2715;</button>
+        </div>
+        <div class="recurring-inline">
+          <div class="section-header collapsible" data-section="recurring">
+            <span class="section-title">Recurring tasks</span>
+            <button class="section-add-btn" id="addRecOpenBtn" title="Add recurring task">+</button>
+            <span class="section-count" id="recCount">0</span>
+            <span class="section-tail"><span class="section-chevron">&#9660;</span></span>
+          </div>
+          <div id="recurringBody">
+            <div class="rec-filter-tabs">
+              <button class="rec-filter-tab rec-filter-active" data-filter="active">Active</button>
+              <button class="rec-filter-tab" data-filter="inactive">Inactive</button>
+            </div>
+            <div id="recList"></div>
+            <div class="empty-state" id="recEmpty" style="display:none">No recurring tasks.</div>
+          </div><!-- /recurringBody -->
+          <div class="add-rec-row" id="addRecRow" style="display:none">
+            <input type="text" id="recName" placeholder="Task name…">
+            <select id="recPriority">
+              <option value="Med">Med</option>
+              <option value="High">High</option>
+              <option value="Low">Low</option>
+            </select>
+            <select id="recFreq">
+              <option value="weekly">Weekly</option>
+              <option value="fortnightly">Fortnightly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+            <input type="date" id="recStartDate">
+            <select id="recTime">
+              <option value="">No time</option>
+            </select>
+            <select id="recCategory">
+              <option value="">— Category —</option>
+            </select>
+            <button class="add-confirm-btn" id="addRecBtn">add</button>
+            <button class="icon-btn" id="addRecCloseBtn" title="Cancel">&#x2715;</button>
+          </div>
+        </div><!-- /recurring-inline -->
+      </section>
+    </main>
+  </div>
+
+  <div class="tab-panel" id="panelWorklog">
+    <div class="wl-layout">
+      <div class="wl-toolbar">
+        <div class="wl-toolbar-left">
+          <input type="text" id="wlSearch" placeholder="Search work log…" class="wl-search">
+          <select id="wlFilterType" class="wl-filter">
+            <option value="">All types</option>
+            <option value="Halo">Halo</option>
+            <option value="Sherlock">Sherlock</option>
+            <option value="Ad-hoc">Ad-hoc</option>
+            <option value="CMT">CMT</option>
+            <option value="Nova">Nova</option>
+            <option value="Upgrade">Upgrade</option>
+            <option value="Meetings">Meetings</option>
+            <option value="Training">Training</option>
+            <option value="SOP">SOP</option>
+            <option value="Report">Report</option>
+            <option value="Research">Research</option>
+            <option value="Other">Other</option>
+            <option value="Uncategorised">Uncategorised</option>
+          </select>
+          <select id="wlFilterStatus" class="wl-filter">
+            <option value="">All statuses</option>
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Blocked">Blocked</option>
+            <option value="Under Review">Under Review</option>
+            <option value="Complete">Complete</option>
+            <option value="Archived">Archived</option>
+          </select>
+          <select id="wlSort" class="wl-filter">
+            <option value="updated">Sort: updated ↓</option>
+            <option value="created">Sort: created ↓</option>
+            <option value="title">Sort: title A–Z</option>
+            <option value="status">Sort: status</option>
+            <option value="type">Sort: type</option>
+          </select>
+        </div>
+        <div class="wl-toolbar-right">
+          <span id="wlCount"
+            style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint);white-space:nowrap;align-self:center"></span>
+          <button class="tool-btn" id="wlViewToggle">⊞ Board</button>
+          <button class="tool-btn" id="wlShowArchivedBtn">Show archived</button>
+        </div>
+      </div>
+      <div class="wl-list" id="wlList"></div>
+      <div class="empty-state" id="wlEmpty" style="padding:2rem 0">No work log items yet. Hit <strong>+ New
+          item</strong> to start.</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panelReferences">
+    <div class="hub-tabs-bar">
+      <button class="hub-tab-btn active" data-hub="links">Links</button>
+      <button class="hub-tab-btn" data-hub="contacts">SMEs</button>
+      <button class="hub-tab-btn" data-hub="databases">Databases</button>
+      <button class="hub-tab-btn" data-hub="snippets">Snippets</button>
+      <button class="hub-tab-btn" data-hub="guides">Guides</button>
+      <button class="hub-tab-btn" data-hub="clinical">Clinical Areas</button>
+      <button class="hub-tab-btn" data-hub="cogito">Cogito Tools</button>
+      <button class="hub-tab-btn" data-hub="reqproc">Requests &amp; Processes</button>
+      <button class="hub-tab-btn" data-hub="trustanalytics">Trust Analytics</button>
+    </div>
+    <div class="hub-panel active" id="hubLinks">
+      <div class="links-page">
+        <div class="links-add-form-wrap" id="linksAddFormWrap">
+          <div class="links-add-form-title">Add new link</div>
+          <div class="links-add-fields">
+            <input type="text" class="links-input name-i" id="linksNameIn" placeholder="Name…">
+            <input type="url" class="links-input url-i" id="linksUrlIn" placeholder="https://…">
+            <input type="text" class="links-input group-i" id="linksGroupIn" placeholder="Group (optional)…"
+              list="linksGroupDatalist" autocomplete="off">
+            <datalist id="linksGroupDatalist"></datalist>
+            <button class="tool-btn primary" id="linksSaveBtn">Add</button>
+            <button class="tool-btn" id="linksCancelBtn">Cancel</button>
+          </div>
+        </div>
+        <div id="linksList"></div>
+      </div>
+    </div>
+    <div class="hub-panel" id="hubContacts">
+      <div class="references-section-block">
+        <div class="contacts-search-row">
+          <input type="text" id="contactsSearch" class="wl-search" placeholder="Search contacts…">
+        </div>
+        <div class="contacts-grid" id="contactsList"></div>
+        <div class="empty-state" id="contactsEmpty" style="display:none">
+          No contacts yet. Hit <strong>+ Add contact</strong> to add your first SME.
+        </div>
+      </div>
+    </div>
+    <div class="hub-panel" id="hubDatabases">
+      <div class="clinical-layout">
+        <div class="clinical-sidebar" id="databasesSidebar">
+          <div class="clinical-area-list" id="databasesAreaList"></div>
+          <button class="clinical-area-add-btn" id="databasesAddAreaBtn">+ New category</button>
+        </div>
+        <div class="clinical-main">
+          <div class="clinical-placeholder" id="databasesPlaceholder" style="display:none">Select a category.</div>
+          <div class="clinical-content" id="databasesContent">
+            <div class="clinical-toolbar" id="databasesToolbar"></div>
+            <div class="clinical-entry-list" id="dbList"></div>
+            <div class="empty-state" id="dbEmpty" style="display:none">No entries yet. Hit <strong>+ Add entry</strong>
+              to document your first database connection.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hub-panel" id="hubSnippets">
+      <div class="clinical-layout">
+        <div class="clinical-sidebar" id="snippetsSidebar">
+          <div class="clinical-area-list" id="snippetsAreaList"></div>
+          <button class="clinical-area-add-btn" id="snippetsAddAreaBtn">+ New category</button>
+        </div>
+        <div class="clinical-main">
+          <div class="clinical-placeholder" id="snippetsPlaceholder" style="display:none">Select a category.</div>
+          <div class="clinical-content" id="snippetsContent">
+            <div class="clinical-toolbar" id="snippetsToolbar"></div>
+            <div class="clinical-tag-filter" id="snippetsTagFilter" style="display:none"></div>
+            <div class="snip-list" id="snipList"></div>
+            <div class="empty-state" id="snipEmpty" style="display:none">No snippets yet. Hit <strong>+ New
+                snippet</strong> to start building your query library.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hub-panel" id="hubGuides">
+      <div class="clinical-layout">
+        <div class="clinical-sidebar" id="guidesSidebar">
+          <div class="clinical-area-list" id="guidesAreaList"></div>
+          <button class="clinical-area-add-btn" id="guidesAddAreaBtn">+ New category</button>
+        </div>
+        <div class="clinical-main">
+          <div class="clinical-placeholder" id="guidesPlaceholder" style="display:none">Select a category.</div>
+          <div class="clinical-content" id="guidesContent">
+            <div class="clinical-toolbar" id="guidesToolbar"></div>
+            <div class="clinical-tag-filter" id="guidesTagFilter" style="display:none"></div>
+            <div class="clinical-entry-list" id="guidesList"></div>
+            <div class="empty-state" id="guidesEmpty" style="display:none">No guides yet. Hit <strong>+ New
+                guide</strong> to add the first one.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hub-panel" id="hubClinical">
+      <div class="clinical-layout">
+        <div class="clinical-sidebar" id="clinicalSidebar">
+          <div class="clinical-area-list" id="clinicalAreaList"></div>
+          <button class="clinical-area-add-btn" id="clinicalAddAreaBtn">+ New area</button>
+        </div>
+        <div class="clinical-main">
+          <div class="clinical-placeholder" id="clinicalPlaceholder">Select a clinical area.</div>
+          <div class="clinical-content" id="clinicalContent" style="display:none">
+            <div class="clinical-toolbar" id="clinicalToolbar"></div>
+            <div class="clinical-tag-filter" id="clinicalTagFilter" style="display:none"></div>
+            <div class="clinical-entry-list" id="clinicalEntryList"></div>
+            <div class="empty-state" id="clinicalEmpty" style="display:none">No entries yet. Hit <strong>+ New
+                entry</strong> to add the first one.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hub-panel" id="hubCogito">
+      <div class="clinical-layout">
+        <div class="clinical-sidebar" id="cogitoSidebar">
+          <div class="clinical-area-list" id="cogitoAreaList"></div>
+          <button class="clinical-area-add-btn" id="cogitoAddAreaBtn">+ New area</button>
+        </div>
+        <div class="clinical-main">
+          <div class="clinical-placeholder" id="cogitoPlaceholder">Select a Cogito area.</div>
+          <div class="clinical-content" id="cogitoContent" style="display:none">
+            <div class="clinical-toolbar" id="cogitoToolbar"></div>
+            <div class="clinical-tag-filter" id="cogitoTagFilter" style="display:none"></div>
+            <div class="clinical-entry-list" id="cogitoEntryList"></div>
+            <div class="empty-state" id="cogitoEmpty" style="display:none">No entries yet. Hit <strong>+ New
+                entry</strong> to add the first one.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hub-panel" id="hubReqproc">
+      <div class="clinical-layout">
+        <div class="clinical-sidebar" id="reqprocSidebar">
+          <div class="clinical-area-list" id="reqprocAreaList"></div>
+          <button class="clinical-area-add-btn" id="reqprocAddAreaBtn">+ New area</button>
+        </div>
+        <div class="clinical-main">
+          <div class="clinical-placeholder" id="reqprocPlaceholder">Select a process area.</div>
+          <div class="clinical-content" id="reqprocContent" style="display:none">
+            <div class="clinical-toolbar" id="reqprocToolbar"></div>
+            <div class="clinical-tag-filter" id="reqprocTagFilter" style="display:none"></div>
+            <div class="clinical-entry-list" id="reqprocEntryList"></div>
+            <div class="empty-state" id="reqprocEmpty" style="display:none">No entries yet. Hit <strong>+ New
+                entry</strong> to add the first one.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hub-panel" id="hubTrustanalytics">
+      <div class="clinical-layout">
+        <div class="clinical-sidebar" id="trustanalyticsSidebar">
+          <div class="clinical-area-list" id="trustanalyticsAreaList"></div>
+          <button class="clinical-area-add-btn" id="trustanalyticsAddAreaBtn">+ New area</button>
+        </div>
+        <div class="clinical-main">
+          <div class="clinical-placeholder" id="trustanalyticsPlaceholder">Select an analytics area.</div>
+          <div class="clinical-content" id="trustanalyticsContent" style="display:none">
+            <div class="clinical-toolbar" id="trustanalyticsToolbar"></div>
+            <div class="clinical-tag-filter" id="trustanalyticsTagFilter" style="display:none"></div>
+            <div class="clinical-entry-list" id="trustanalyticsEntryList"></div>
+            <div class="empty-state" id="trustanalyticsEmpty" style="display:none">No entries yet. Hit <strong>+ New
+                entry</strong> to add the first one.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel active" id="panelDashboard">
+    <div class="dash-page">
+      <div class="dash-range-bar">
+        <button class="dash-range-btn active" data-range="week">Last week</button>
+        <button class="dash-range-btn" data-range="month">Last month</button>
+        <button class="dash-range-btn" data-range="all">All time</button>
+      </div>
+      <div class="dash-cards" id="dashCards"></div>
+      <div class="dash-insights" id="dashInsights"></div>
+      <div class="dash-charts" id="dashCharts">
+        <div class="dash-chart-box">
+          <div class="dash-chart-title">Weekly completion vs carry-over</div>
+          <canvas id="chartWeekTrend"></canvas>
+          <div class="dash-no-data" id="chartWeekTrendEmpty" style="display:none">No task data yet</div>
+        </div>
+        <div class="dash-chart-box">
+          <div class="dash-chart-title" id="chartWlTypeTitle">Time by work type</div>
+          <canvas id="chartWlType"></canvas>
+          <div class="dash-no-data" id="chartWlTypeEmpty" style="display:none">No work log items yet</div>
+        </div>
+        <div class="dash-chart-box">
+          <div class="dash-chart-title">Work log pipeline</div>
+          <canvas id="chartPipeline"></canvas>
+          <div class="dash-no-data" id="chartPipelineEmpty" style="display:none">No work log items yet</div>
+        </div>
+        <div class="dash-chart-box">
+          <div class="dash-chart-title">Priority completion</div>
+          <canvas id="chartPriority"></canvas>
+          <div class="dash-no-data" id="chartPriorityEmpty" style="display:none">No tasks yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="tab-panel" id="panelCalendar">
+    <div class="cal-panel-inner">
+      <div id="calWeekView" class="cal-week-outer"></div>
+      <div id="calMonthView" class="cal-month-outer"></div>
+    </div>
+  </div>
+
+  <div class="wl-lightbox" id="wlLightbox">
+    <button class="wl-lightbox-close" id="wlLightboxClose">&#x2715;</button>
+    <img id="wlLightboxImg" src="" alt="">
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="confirm-modal" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="confirmMsg">
+    <div class="confirm-box">
+      <p id="confirmMsg"></p>
+      <div class="confirm-actions">
+        <button class="tool-btn" id="confirmCancel">Cancel</button>
+        <button class="tool-btn primary confirm-ok-btn" id="confirmOk">Continue</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="cmdkOverlay" class="cmdk-overlay hidden" aria-hidden="true">
+    <div class="cmdk-box" role="dialog" aria-label="Quick search">
+      <div class="cmdk-search-row">
+        <span class="cmdk-icon">&#9906;</span>
+        <input type="text" id="cmdkInput" class="cmdk-input" placeholder="Search snippets, docs, guides, contacts…"
+          autocomplete="off">
+        <kbd class="cmdk-esc">esc</kbd>
+      </div>
+      <div class="cmdk-results" id="cmdkResults"></div>
+    </div>
+  </div>
+
+  <script src="rcc.js?v=3"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
+</body>
+
+</html>

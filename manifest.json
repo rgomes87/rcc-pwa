@@ -1,0 +1,12 @@
+{
+  "name": "Rui's Command Centre",
+  "short_name": "RCC",
+  "description": "Personal work management — todos, documentation, links.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

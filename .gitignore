@@ -1,0 +1,8 @@
+# Deployment copy (built from source)
+rcc-deploy/
+
+# App data backups
+backups-bk/
+
+# macOS
+.DS_Store
