@@ -1204,7 +1204,7 @@ function saveSettings(s) {
 // IndexedDB helpers — FileSystemDirectoryHandle cannot be stored in localStorage
 function _openHandleDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('rcc_fs', 7);
+    const req = indexedDB.open('rcc_fs', 8);
     req.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains('handles'))        db.createObjectStore('handles');
