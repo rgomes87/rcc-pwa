@@ -1477,6 +1477,7 @@ document.getElementById('restoreInput').addEventListener('change', e => {
 
 // Declare wlItems here so renderList() (called inside render()) can safely reference it
 let wlItems = [];
+let selectedWLType = 'All';
 let snipItems = [];
 let guideItems = [];
 let contactItems = loadContacts();
@@ -4002,6 +4003,7 @@ function autoArchiveComplete() {
   populateWlDropdowns();
   // switchTab() runs synchronously below before this IIFE resolves,
   // so if the active tab was set, re-render once data is loaded (<10ms locally).
+  renderWLSidebar();
   if (localStorage.getItem('rcc_active_tab') === 'Worklog') renderWL();
   if (localStorage.getItem('rcc_active_tab') === 'References') {
     const hub = localStorage.getItem('rcc_hub_tab') || 'links';
@@ -4087,6 +4089,25 @@ function wlPreviewText(item) {
   return text.length > 120 ? text.slice(0, 117) + '\u2026' : text;
 }
 
+const WL_TYPES = ['All', 'Halo', 'Sherlock', 'Ad-hoc', 'CMT', 'Nova', 'Upgrade', 'Meetings', 'Training', 'SOP', 'Report', 'Research', 'Other'];
+
+function renderWLSidebar() {
+  const sidebar = document.getElementById('wlTypeSidebar');
+  if (!sidebar) return;
+  sidebar.innerHTML = '';
+  WL_TYPES.forEach(type => {
+    const item = document.createElement('div');
+    item.className = 'wl-type-sidebar-item' + (selectedWLType === type ? ' active' : '');
+    item.textContent = type;
+    item.addEventListener('click', () => {
+      selectedWLType = type;
+      renderWLSidebar();
+      renderWL();
+    });
+    sidebar.appendChild(item);
+  });
+}
+
 function renderWL() {
   const list = document.getElementById('wlList');
   const empty = document.getElementById('wlEmpty');
@@ -4097,6 +4118,7 @@ function renderWL() {
   let filtered = wlItems.filter(item => {
     if (item.archived) return false;
     if (!wlShowArchived && item.status === 'Archived') return false;
+    if (selectedWLType !== 'All' && item.type !== selectedWLType) return false;
     if (filterType && item.type !== filterType) return false;
     if (filterStatus && item.status !== filterStatus) return false;
     if (search) {
@@ -5997,16 +6019,7 @@ function openWLViewModal(itemId) {
   item.sections.forEach((s, sIdx) => {
     const hasContent = (s.nodes || []).some(n => (n.value || '').trim() || n.type === 'image') || (s.content || '').trim();
     if (!hasContent) return;
-    const secDiv = document.createElement('div');
-    secDiv.className = 'wl-view-section';
-    const secTitle = document.createElement('div');
-    secTitle.className = 'wl-view-section-title';
-    secTitle.textContent = s.title;
-    const secBody = document.createElement('div');
-    secBody.className = 'wl-view-section-body';
-    _renderWLSectionNodes(secBody, s.nodes || [], itemId, sIdx);
-    secDiv.append(secTitle, secBody);
-    sectionsEl.appendChild(secDiv);
+    sectionsEl.appendChild(_buildViewSection(s, itemId, sIdx));
   });
   // Linked items
   if ((item.linkedItems || []).length > 0) {
@@ -6024,37 +6037,6 @@ function openWLViewModal(itemId) {
     });
     sectionsEl.appendChild(linkedDiv);
   }
-  // Linked snippets
-  const linkedSnips = (item.linkedSnippets || []).map(id => snipItems.find(s => s.id === id)).filter(Boolean);
-  if (linkedSnips.length) {
-    const lsDiv = document.createElement('div');
-    lsDiv.className = 'wl-view-section';
-    const lsTitle = document.createElement('div');
-    lsTitle.className = 'wl-view-section-title';
-    lsTitle.textContent = 'Linked Snippets';
-    const lsBody = document.createElement('div');
-    lsBody.className = 'wl-view-section-body';
-    linkedSnips.forEach(s => {
-      const row = document.createElement('div');
-      row.className = 'snip-link-row';
-      row.innerHTML = `<span class="snip-source-badge snip-src-${s.source.toLowerCase()}">${s.source}</span><span style="font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.title)}</span>`;
-      const btnWrap = document.createElement('div');
-      btnWrap.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'tool-btn';
-      copyBtn.textContent = 'Copy SQL';
-      copyBtn.addEventListener('click', () => navigator.clipboard.writeText(s.query || '').then(() => showToast('Copied.')));
-      const openBtn = document.createElement('button');
-      openBtn.className = 'tool-btn primary';
-      openBtn.textContent = 'Open';
-      openBtn.addEventListener('click', () => { switchTab('References'); switchHubTab('snippets'); openSnipViewModal(s.id); });
-      btnWrap.append(copyBtn, openBtn);
-      row.appendChild(btnWrap);
-      lsBody.appendChild(row);
-    });
-    lsDiv.append(lsTitle, lsBody);
-    sectionsEl.appendChild(lsDiv);
-  }
 
   // Time total
   const wlTotalSecs = getTotalSecs(item);
@@ -6070,31 +6052,19 @@ function openWLViewModal(itemId) {
   footer.className = 'wl-modal-footer';
   const editBtn = document.createElement('button');
   editBtn.className = 'tool-btn primary';
+  editBtn.style.marginLeft = 'auto';
   editBtn.innerHTML = '&#9998; Edit';
-  const barRight = document.createElement('div');
-  barRight.style.cssText = 'margin-left:auto;display:flex;gap:8px';
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'tool-btn';
-  copyBtn.textContent = 'Copy .md';
-  const dlBtn = document.createElement('button');
-  dlBtn.className = 'tool-btn';
-  dlBtn.innerHTML = '&#8659; .md';
-  barRight.append(copyBtn, dlBtn);
-  footer.append(editBtn, barRight);
+  footer.append(editBtn);
 
   modal.append(dragBar, header, sectionsEl, footer);
   document.body.appendChild(modal); modal._openModal?.();
 
   modal._dragCleanup = setupWLModalDrag(modal, dragBar);
   function closeModal() { closeWLModal(modal); }
-  
+
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
   editBtn.addEventListener('click', () => { closeModal(); createWLModal(itemId); });
-  copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(buildWLItemMd(item)).then(() => showToast('Copied to clipboard.'));
-  });
-  dlBtn.addEventListener('click', () => downloadWLItemMd(item));
 }
 
 // ── WL Modal orchestrator ────────────────────────────────────────
@@ -9498,7 +9468,7 @@ function switchTab(tab) {
   document.getElementById('wlNav').style.display          = tab === 'Worklog'    ? 'flex' : 'none';
   document.getElementById('referencesNav').style.display  = tab === 'References' ? 'flex' : 'none';
   document.getElementById('calNav').style.display         = tab === 'Calendar'   ? 'flex' : 'none';
-  if (tab === 'Worklog')    renderWL();
+  if (tab === 'Worklog')    { renderWLSidebar(); renderWL(); }
   if (tab === 'References') {
     const hub = localStorage.getItem('rcc_hub_tab') || 'links';
     switchHubTab(hub);

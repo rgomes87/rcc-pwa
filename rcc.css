@@ -1902,7 +1902,38 @@
 
   /* ── Work Log ── */
   .wl-layout {
-    max-width: 1100px;
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+  }
+  .wl-type-sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 0.75rem 0;
+  }
+  .wl-type-sidebar-item {
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-faint);
+    border-left: 2px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .wl-type-sidebar-item:hover { background: var(--surface); color: var(--text); }
+  .wl-type-sidebar-item.active { color: var(--accent); border-left-color: var(--accent); font-weight: 500; background: rgba(var(--accent-rgb), 0.07); }
+  .wl-main {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    max-width: 940px;
     margin: 0 auto;
     padding: 1.5rem;
   }
@@ -3235,8 +3266,8 @@
 }
 
 /* ── B1: Kanban board view ───────────────────────────────────────────────── */
-.wl-layout.wl-board-mode { max-width: none; }
-.wl-layout.wl-board-mode .wl-toolbar { max-width: 1100px; margin-left: auto; margin-right: auto; padding-left: 1.5rem; padding-right: 1.5rem; background: transparent; }
+.wl-layout.wl-board-mode .wl-main { max-width: none; }
+.wl-layout.wl-board-mode .wl-main .wl-toolbar { max-width: 1100px; margin-left: auto; margin-right: auto; padding-left: 0; padding-right: 0; background: transparent; }
 .wl-layout.wl-board-mode #wlList { overflow-x: auto; padding-bottom: 0.5rem; cursor: grab; }
 .wl-layout.wl-board-mode #wlList:active { cursor: grabbing; }
 
