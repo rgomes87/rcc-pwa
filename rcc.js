@@ -8387,7 +8387,7 @@ function createDatabaseModal(editId = null) {
 
   const orgPills = document.createElement('div');
   orgPills.className = 'db-org-pills-input';
-  const currentOrgs = getDbOrgs(item);
+  const currentOrgs = getDbOrgs(item || {});
   DB_ORGS.forEach(o => {
     const btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'db-org-pill'; btn.dataset.org = o; btn.textContent = o;
@@ -9526,8 +9526,10 @@ function renderArchivePanel() {
 
 function switchTab(tab) {
   ['Todos','Worklog','References','Dashboard','Calendar','Archive'].forEach(t => {
-    document.getElementById('panel' + t).classList.toggle('active', t === tab);
-    document.getElementById('tab' + t).classList.toggle('active', t === tab);
+    const panelEl = document.getElementById('panel' + t);
+    const tabEl = document.getElementById('tab' + t);
+    if (panelEl) panelEl.classList.toggle('active', t === tab);
+    if (tabEl) tabEl.classList.toggle('active', t === tab);
   });
   document.getElementById('weekNav').style.display        = tab === 'Todos'      ? 'flex' : 'none';
   document.getElementById('wlNav').style.display          = tab === 'Worklog'    ? 'flex' : 'none';
@@ -9545,12 +9547,11 @@ function switchTab(tab) {
 }
 
 // Wire up tabs
-document.getElementById('tabTodos').addEventListener('click',      () => switchTab('Todos'));
-document.getElementById('tabWorklog').addEventListener('click',    () => switchTab('Worklog'));
-document.getElementById('tabReferences').addEventListener('click', () => switchTab('References'));
-document.getElementById('tabDashboard').addEventListener('click',  () => switchTab('Dashboard'));
-document.getElementById('tabCalendar').addEventListener('click',   () => switchTab('Calendar'));
-document.getElementById('tabArchive').addEventListener('click',    () => switchTab('Archive'));
+['tabTodos', 'tabWorklog', 'tabReferences', 'tabDashboard', 'tabCalendar', 'tabArchive'].forEach(id => {
+  const tab = id.replace('tab', '');
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', () => switchTab(tab));
+});
 
 // Wire hub sub-tabs
 document.querySelectorAll('.hub-tab-btn').forEach(btn =>
