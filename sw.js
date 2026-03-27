@@ -1,4 +1,4 @@
-const CACHE = 'rcc-v115';
+const CACHE = 'rcc-v116';
 const SHELL = [
   '/',
   '/rcc.css',
@@ -11,6 +11,7 @@ const SHELL = [
   'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,500;1,300&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap',
   'https://esm.sh/codemirror@6',
   'https://esm.sh/@codemirror/view@6',
+  'https://esm.sh/@codemirror/state@6',
   'https://esm.sh/@codemirror/lang-markdown@6',
   'https://esm.sh/@replit/codemirror-vim@6',
   'https://esm.sh/@codemirror/autocomplete@6',
