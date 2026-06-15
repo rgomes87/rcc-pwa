@@ -1,0 +1,49 @@
+Out from Testing - Rui
+1. Console any errors from F12
+''Failed to load resource: the server responded with a status of 404 ()Understand this error
+5Manifest fetch from <URL> failed, code 404Understand this error
+(index):601 Uncaught SyntaxError: The requested module 'https://esm.sh/@codemirror/view@6' does not provide an export named 'EditorState' (at (index):601:26)Understand this error
+manifest.json:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+/icon.svg:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+manifest.json:1  Failed to load resource: the server responded with a status of 404 ()Understand this error
+manifest.json:1  GET https://rui-command-centre.netlify.app/manifest.json 404 (Not Found)Understand this error
+manifest.json:1  GET https://rui-command-centre.netlify.app/manifest.json 404 (Not Found)Understand this error
+manifest.json:1  GET https://rui-command-centre.netlify.app/manifest.json 404 (Not Found)Understand this error''
+
+I cannot add a new item in the knowledge Hub Databases - F12 error:
+"3rcc.js?v=3:8236 Uncaught TypeError: Cannot read properties of null (reading 'orgs')
+    at getDbOrgs (rcc.js?v=3:8236:26)
+    at createDatabaseModal (rcc.js?v=3:8390:23)
+    at HTMLButtonElement.<anonymous> (rcc.js?v=3:9726:81)"
+
+As I was adding/testing items, i could not see the archive anymore and got these errors: "rcc.js?v=3:9553 Uncaught TypeError: Cannot read properties of null (reading 'addEventListener')
+    at rcc.js?v=3:9553:38
+(anonymous) @ rcc.js?v=3:9553Understand this error
+sw.js:1 Uncaught (in promise) TypeError: Failed to execute 'addAll' on 'Cache': Request failedUnderstand this error
+sw.js:1 Uncaught (in promise) TypeError: Failed to execute 'addAll' on 'Cache': Request failedUnderstand this error
+rcc.js?v=3:9529 Uncaught TypeError: Cannot read properties of null (reading 'classList')
+    at rcc.js?v=3:9529:41
+    at Array.forEach (<anonymous>)
+    at switchTab (rcc.js?v=3:9528:69)
+    at HTMLButtonElement.<anonymous> (rcc.js?v=3:9548:74)
+(anonymous) @ rcc.js?v=3:9529
+switchTab @ rcc.js?v=3:9528
+(anonymous) @ rcc.js?v=3:9548Understand this error
+rcc.js?v=3:9529 Uncaught TypeError: Cannot read properties of null (reading 'classList')
+    at rcc.js?v=3:9529:41
+    at Array.forEach (<anonymous>)
+    at switchTab (rcc.js?v=3:9528:69)
+    at HTMLButtonElement.<anonymous> (rcc.js?v=3:9549:74)
+(anonymous) @ rcc.js?v=3:9529
+switchTab @ rcc.js?v=3:9528
+(anonymous) @ rcc.js?v=3:9549Understand this error
+rcc.js?v=3:9529 Uncaught TypeError: Cannot read properties of null (reading 'classList')
+    at rcc.js?v=3:9529:41
+    at Array.forEach (<anonymous>)
+    at switchTab (rcc.js?v=3:9528:69)
+    at HTMLButtonElement.<anonymous> (rcc.js?v=3:9550:74)"
+
+
+    Stopped testing because its too many things broken
+
+
